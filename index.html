@@ -140,13 +140,13 @@
   <section class="stats">
     <div class="stat neg">
       <div class="k">Shortfall alert</div>
-      <div class="v num">&minus;9</div>
+      <div class="v num">&minus;18</div>
       <div class="d">BKK27 40'RH, balance till 3 OCT</div>
     </div>
     <div class="stat">
       <div class="k">Combined 40'RH stock</div>
-      <div class="v num">113</div>
-      <div class="d">BKK27 50 + LCH27 63</div>
+      <div class="v num">96</div>
+      <div class="d">BKK27 41 + LCH27 55</div>
     </div>
     <div class="stat">
       <div class="k">Combined 40'RH booking</div>
@@ -155,7 +155,7 @@
     </div>
     <div class="stat">
       <div class="k">Combined 40'RH balance</div>
-      <div class="v num">&minus;3</div>
+      <div class="v num">&minus;20</div>
       <div class="d">till 3 OCT, both depots</div>
     </div>
   </section>
@@ -193,18 +193,18 @@
     <div class="stats">
       <div class="stat bkk">
         <div class="k">BKK27 &middot; 2020&ndash;26 built</div>
-        <div class="v num">34</div>
-        <div class="d">of 50 total 40'RH on hand (68%)</div>
+        <div class="v num">28</div>
+        <div class="d">of 41 total 40'RH on hand (68%)</div>
       </div>
       <div class="stat lch">
         <div class="k">LCH27 &middot; 2020&ndash;26 built</div>
-        <div class="v num">24</div>
-        <div class="d">of 63 total 40'RH on hand (38%)</div>
+        <div class="v num">21</div>
+        <div class="d">of 55 total 40'RH on hand (38%)</div>
       </div>
       <div class="stat">
         <div class="k">Peak build year</div>
-        <div class="v num">2019</div>
-        <div class="d">23 units across both depots</div>
+        <div class="v num">2019 / 2021</div>
+        <div class="d">tied at 19 units across both depots</div>
       </div>
     </div>
     <div class="charts-row" style="margin-top:18px;">
@@ -231,22 +231,22 @@
     </div>
   </section>
 
-  <footer>Source: 9-16-STAYING-RH.xls + 9-16-BKG-3WKS.xls &middot; as of 16 SEP 2026</footer>
+  <footer>Source: 9-16-STAYING-RH.xls (18:32) + 9-16-BKG-3WKS.xls &middot; as of 16 SEP 2026</footer>
 
 </div>
 
 <script>
 (function(){
   const rows = [
-    {label:"Stock empty in yard", bkk:[31,50], lch:[8,63], stock:true},
+    {label:"Stock empty in yard", bkk:[29,41], lch:[8,55], stock:true},
     {label:"Booking Pending pick up", bkk:[0,8], lch:[0,13]},
     {label:"Booking on 16 SEP", bkk:[2,6], lch:[0,8]},
     {label:"Booking on 17-19 SEP", bkk:[6,19], lch:[0,13]},
-    {label:"AV Balance till 19 SEP", bkk:[23,17], lch:[8,29], av:true},
+    {label:"AV Balance till 19 SEP", bkk:[21,8], lch:[8,21], av:true},
     {label:"Booking on 21-26 SEP", bkk:[5,25], lch:[2,18]},
-    {label:"AV Balance till 26 SEP", bkk:[18,-8], lch:[6,11], av:true},
+    {label:"AV Balance till 26 SEP", bkk:[16,-17], lch:[6,3], av:true},
     {label:"Booking on 28 SEP-3 OCT", bkk:[2,1], lch:[0,5]},
-    {label:"AV Balance till 3 OCT", bkk:[16,-9], lch:[6,6], av:true},
+    {label:"AV Balance till 3 OCT", bkk:[14,-18], lch:[6,-2], av:true},
   ];
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = rows.map(r=>{
@@ -259,11 +259,11 @@
   // ---- Remarks: AV (IED/IEP/IER) and DMG (EOR) counts, split by depot ----
   (function(){
     const remarksBkk = [
-      {label:"AV (available)", v:[27,26]},
+      {label:"AV (available)", v:[25,37]},
       {label:"DMG (damaged)", v:[0,0]},
     ];
     const remarksLch = [
-      {label:"AV (available)", v:[7,38]},
+      {label:"AV (available)", v:[7,33]},
       {label:"DMG (damaged)", v:[0,0]},
     ];
     function fillRemarks(tbodyId, data){
@@ -281,17 +281,17 @@
     // per year: cre/crh = Carrier 22RE/45RE, dre/drh = Daikin, tre/trh = Thermo King
     const bkkYBS = {
       2026:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
-      2025:{cre:0,crh:8,dre:4,drh:0,tre:0,trh:0},
+      2025:{cre:0,crh:6,dre:4,drh:0,tre:0,trh:0},
       2024:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
-      2023:{cre:0,crh:3,dre:0,drh:0,tre:0,trh:0},
+      2023:{cre:0,crh:2,dre:0,drh:0,tre:0,trh:0},
       2022:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
-      2021:{cre:9,crh:17,dre:0,drh:0,tre:0,trh:0},
-      2020:{cre:2,crh:6,dre:0,drh:0,tre:0,trh:0},
-      2019:{cre:2,crh:10,dre:0,drh:0,tre:0,trh:0},
+      2021:{cre:8,crh:15,dre:0,drh:0,tre:0,trh:0},
+      2020:{cre:1,crh:5,dre:0,drh:0,tre:0,trh:0},
+      2019:{cre:2,crh:8,dre:0,drh:0,tre:0,trh:0},
       2018:{cre:1,crh:0,dre:0,drh:0,tre:0,trh:0},
       2017:{cre:2,crh:3,dre:0,drh:0,tre:0,trh:0},
       2016:{cre:2,crh:1,dre:0,drh:0,tre:0,trh:0},
-      2015:{cre:0,crh:1,dre:1,drh:0,tre:0,trh:0},
+      2015:{cre:0,crh:0,dre:1,drh:0,tre:0,trh:0},
       2014:{cre:1,crh:0,dre:0,drh:0,tre:0,trh:0},
       2013:{cre:1,crh:0,dre:4,drh:1,tre:1,trh:0},
       2012:{cre:1,crh:0,dre:0,drh:0,tre:0,trh:0},
@@ -300,19 +300,19 @@
     };
     const lchYBS = {
       2026:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
-      2025:{cre:0,crh:9,dre:1,drh:0,tre:0,trh:0},
+      2025:{cre:0,crh:5,dre:1,drh:0,tre:0,trh:0},
       2024:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
       2023:{cre:0,crh:3,dre:0,drh:0,tre:0,trh:0},
       2022:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
       2021:{cre:1,crh:4,dre:0,drh:0,tre:0,trh:0},
-      2020:{cre:0,crh:8,dre:0,drh:0,tre:0,trh:0},
-      2019:{cre:0,crh:13,dre:0,drh:0,tre:0,trh:0},
+      2020:{cre:0,crh:9,dre:0,drh:0,tre:0,trh:0},
+      2019:{cre:0,crh:11,dre:0,drh:0,tre:0,trh:0},
       2018:{cre:0,crh:1,dre:0,drh:0,tre:0,trh:0},
       2017:{cre:2,crh:1,dre:0,drh:0,tre:0,trh:0},
       2016:{cre:1,crh:6,dre:0,drh:0,tre:0,trh:0},
-      2015:{cre:0,crh:5,dre:0,drh:0,tre:0,trh:0},
-      2014:{cre:0,crh:6,dre:0,drh:0,tre:0,trh:0},
-      2013:{cre:0,crh:0,dre:2,drh:2,tre:0,trh:0},
+      2015:{cre:0,crh:4,dre:0,drh:0,tre:0,trh:0},
+      2014:{cre:0,crh:5,dre:0,drh:0,tre:0,trh:0},
+      2013:{cre:0,crh:0,dre:2,drh:1,tre:0,trh:0},
       2012:{cre:0,crh:2,dre:1,drh:0,tre:0,trh:0},
       2011:{cre:0,crh:0,dre:0,drh:3,tre:0,trh:0},
       2010:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
