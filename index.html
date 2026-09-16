@@ -168,7 +168,7 @@
         <tbody id="tbody"></tbody>
       </table>
     </div>
-    <p class="note" style="margin:16px 0 8px;"><strong>AV</strong> = stock with move code IED / IEP / IER (available) &middot; <strong>DMG</strong> = move code EOR (damaged)</p>
+    <p class="note" style="margin:16px 0 8px;"><strong>AV</strong> = stock with move code IED / IEP / IER (available) &middot; <strong>DMG</strong> = move code OER (damaged)</p>
     <div class="charts-row">
       <div class="chart-wrap">
         <table>
@@ -256,15 +256,15 @@
     return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
   }).join('');
 
-  // ---- Remarks: AV (IED/IEP/IER) and DMG (EOR) counts, split by depot ----
+  // ---- Remarks: AV (IED/IEP/IER) and DMG (OER) counts, split by depot ----
   (function(){
     const remarksBkk = [
       {label:"AV (available)", v:[25,37]},
-      {label:"DMG (damaged)", v:[0,0]},
+      {label:"DMG (damaged)", v:[4,4]},
     ];
     const remarksLch = [
       {label:"AV (available)", v:[7,33]},
-      {label:"DMG (damaged)", v:[0,0]},
+      {label:"DMG (damaged)", v:[1,22]},
     ];
     function fillRemarks(tbodyId, data){
       const tbody = document.getElementById(tbodyId);
