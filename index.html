@@ -158,7 +158,7 @@
 
   <section class="card">
     <h2>RF Seasonal &mdash; stock by build year</h2>
-    <p class="note">40'RH (45RE) empty stock by container build year, 2020&ndash;2026. All units in this window are Carrier-brand.</p>
+    <p class="note">40'RH (45RE) empty stock by container build year, 2010&ndash;2026.</p>
     <div class="stats">
       <div class="stat bkk">
         <div class="k">BKK27 &middot; 2020&ndash;26 built</div>
@@ -172,8 +172,8 @@
       </div>
       <div class="stat">
         <div class="k">Peak build year</div>
-        <div class="v num">2021</div>
-        <div class="d">21 units across both depots</div>
+        <div class="v num">2019</div>
+        <div class="d">23 units across both depots</div>
       </div>
     </div>
     <div class="charts-row" style="margin-top:18px;">
@@ -221,15 +221,19 @@
 
   // ---- RF Seasonal: stock by build year ----
   (function(){
-    const years = [2026,2025,2024,2023,2022,2021,2020];
-    // brand split, 45RE only - all 2020-2026 units on hand are Carrier-brand
+    const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012,2011,2010];
+    // brand split, 45RE only
     const bkkBrand = {
       2026:{c:0,d:0,t:0}, 2025:{c:8,d:0,t:0}, 2024:{c:0,d:0,t:0}, 2023:{c:3,d:0,t:0},
-      2022:{c:0,d:0,t:0}, 2021:{c:17,d:0,t:0}, 2020:{c:6,d:0,t:0},
+      2022:{c:0,d:0,t:0}, 2021:{c:17,d:0,t:0}, 2020:{c:6,d:0,t:0}, 2019:{c:10,d:0,t:0},
+      2018:{c:0,d:0,t:0}, 2017:{c:3,d:0,t:0}, 2016:{c:1,d:0,t:0}, 2015:{c:1,d:0,t:0},
+      2014:{c:0,d:0,t:0}, 2013:{c:0,d:1,t:0}, 2012:{c:0,d:0,t:0}, 2011:{c:0,d:0,t:0}, 2010:{c:0,d:0,t:0},
     };
     const lchBrand = {
       2026:{c:0,d:0,t:0}, 2025:{c:9,d:0,t:0}, 2024:{c:0,d:0,t:0}, 2023:{c:3,d:0,t:0},
-      2022:{c:0,d:0,t:0}, 2021:{c:4,d:0,t:0}, 2020:{c:8,d:0,t:0},
+      2022:{c:0,d:0,t:0}, 2021:{c:4,d:0,t:0}, 2020:{c:8,d:0,t:0}, 2019:{c:13,d:0,t:0},
+      2018:{c:1,d:0,t:0}, 2017:{c:1,d:0,t:0}, 2016:{c:6,d:0,t:0}, 2015:{c:5,d:0,t:0},
+      2014:{c:6,d:0,t:0}, 2013:{c:0,d:2,t:0}, 2012:{c:2,d:0,t:0}, 2011:{c:0,d:3,t:0}, 2010:{c:0,d:0,t:0},
     };
 
     function fillBrandTable(tbodyId, brandData){
