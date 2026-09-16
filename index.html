@@ -18,6 +18,11 @@
     --lch-soft:#fbe3d5;
     --neg:#d03b3b;
     --neg-soft:#fbdede;
+    --band-green:#a9d18e;
+    --band-yellow:#ffe699;
+    --band-brown:#c4a484;
+    --band-red:#f4a7a7;
+    --band-ink:#1a1a1a;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
@@ -85,7 +90,7 @@
 
   table{width:100%; border-collapse:collapse; font-size:13.5px;}
   th,td{padding:9px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap;}
-  th:first-child,td:first-child,th:nth-child(5),td:nth-child(5){text-align:left;}
+  th:first-child,td:first-child,th.lbl,td.lbl{text-align:left;}
   thead th{font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);}
   tbody tr:last-child td{border-bottom:none;}
   tr.stock td{font-weight:700; background:var(--surface-2);}
@@ -95,6 +100,15 @@
   .depot-head{font-weight:800; font-size:14px;}
   .depot-head.bkk{color:var(--bkk);}
   .depot-head.lch{color:var(--lch);}
+
+  .ybs-table{border-collapse:collapse;}
+  .ybs-table th, .ybs-table td{border:1px solid var(--line);}
+  .ybs-table td{font-weight:600;}
+  .ybs-table tr.band-green td{background:var(--band-green); color:var(--band-ink);}
+  .ybs-table tr.band-yellow td{background:var(--band-yellow); color:var(--band-ink);}
+  .ybs-table tr.band-brown td{background:var(--band-brown); color:var(--band-ink);}
+  .ybs-table tr.band-red td{background:var(--band-red); color:var(--band-ink);}
+  .ybs-table tr.av td{background:var(--bkk-soft); font-weight:800; border-top:2px solid var(--line);}
 
   .band-rect{fill:var(--surface-2);}
   .band-tag{fill:var(--ink-3); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:"IBM Plex Mono",monospace;}
@@ -150,15 +164,22 @@
     <h2>Detail by depot</h2>
     <div class="chart-wrap">
       <table>
-        <thead><tr><th>BKK27 / BC2</th><th class="num">20'RE</th><th class="num">40'RH</th><th style="width:26px"></th><th>LCH27 / HAST</th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
+        <thead><tr><th>BKK27 / BC2</th><th class="num">20'RE</th><th class="num">40'RH</th><th style="width:26px"></th><th class="lbl">LCH27 / HAST</th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
         <tbody id="tbody"></tbody>
+      </table>
+    </div>
+    <p class="note" style="margin:16px 0 8px;"><strong>AV</strong> = stock with move code IED / IEP / IER (available) &middot; <strong>DMG</strong> = move code EOR (damaged)</p>
+    <div class="chart-wrap">
+      <table>
+        <thead><tr><th>Remarks</th><th class="num">20'RE</th><th class="num">40'RH</th><th style="width:26px"></th><th class="lbl">Remarks</th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
+        <tbody id="tbodyRemarks"></tbody>
       </table>
     </div>
   </section>
 
   <section class="card">
     <h2>RF Seasonal &mdash; stock by build year</h2>
-    <p class="note">40'RH (45RE) empty stock by container build year, 2010&ndash;2026.</p>
+    <p class="note">20'RE and 40'RH empty stock by container build year and brand, 2010&ndash;2026.</p>
     <div class="stats">
       <div class="stat bkk">
         <div class="k">BKK27 &middot; 2020&ndash;26 built</div>
@@ -178,16 +199,22 @@
     </div>
     <div class="charts-row" style="margin-top:18px;">
       <div class="chart-wrap">
-        <table>
-          <thead><tr><th class="depot-head bkk" colspan="4" style="text-align:left">BKK27 / BC2</th></tr>
-            <tr><th>Year built</th><th class="num">Carrier</th><th class="num">Daikin</th><th class="num">Thermo King</th></tr></thead>
+        <table class="ybs-table">
+          <thead>
+            <tr><th class="depot-head bkk" colspan="7" style="text-align:left">BKK27 / BC2</th></tr>
+            <tr><th rowspan="2">Year built</th><th colspan="2">Carrier</th><th colspan="2">Daikin</th><th colspan="2">Thermo King</th></tr>
+            <tr><th class="num">22RE</th><th class="num">45RE</th><th class="num">22RE</th><th class="num">45RE</th><th class="num">22RE</th><th class="num">45RE</th></tr>
+          </thead>
           <tbody id="tbodyYearBkk"></tbody>
         </table>
       </div>
       <div class="chart-wrap">
-        <table>
-          <thead><tr><th class="depot-head lch" colspan="4" style="text-align:left">LCH27 / HAST</th></tr>
-            <tr><th>Year built</th><th class="num">Carrier</th><th class="num">Daikin</th><th class="num">Thermo King</th></tr></thead>
+        <table class="ybs-table">
+          <thead>
+            <tr><th class="depot-head lch" colspan="7" style="text-align:left">LCH27 / HAST</th></tr>
+            <tr><th rowspan="2">Year built</th><th colspan="2">Carrier</th><th colspan="2">Daikin</th><th colspan="2">Thermo King</th></tr>
+            <tr><th class="num">22RE</th><th class="num">45RE</th><th class="num">22RE</th><th class="num">45RE</th><th class="num">22RE</th><th class="num">45RE</th></tr>
+          </thead>
           <tbody id="tbodyYearLch"></tbody>
         </table>
       </div>
@@ -216,41 +243,87 @@
     const cls = r.stock ? 'stock' : (r.av ? 'av' : '');
     const alwaysShow = r.stock || r.av;
     const cell = (v)=> `<td class="num${v<0?' negv':''}">${(v===0 && !alwaysShow) ? '' : v}</td>`;
-    return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td>${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
+    return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
   }).join('');
 
-  // ---- RF Seasonal: stock by build year ----
+  // ---- Remarks: AV (IED/IEP/IER) and DMG (EOR) counts ----
+  (function(){
+    const remarks = [
+      {label:"AV (available)", bkk:[27,26], lch:[7,38]},
+      {label:"DMG (damaged)", bkk:[0,0], lch:[0,0]},
+    ];
+    const tbodyR = document.getElementById('tbodyRemarks');
+    tbodyR.innerHTML = remarks.map(r=>{
+      const cell = (v)=> `<td class="num">${v}</td>`;
+      return `<tr><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
+    }).join('');
+  })();
+
+  // ---- RF Seasonal: stock by build year, brand x size ----
   (function(){
     const years = [2026,2025,2024,2023,2022,2021,2020,2019,2018,2017,2016,2015,2014,2013,2012,2011,2010];
-    // brand split, 45RE only
-    const bkkBrand = {
-      2026:{c:0,d:0,t:0}, 2025:{c:8,d:0,t:0}, 2024:{c:0,d:0,t:0}, 2023:{c:3,d:0,t:0},
-      2022:{c:0,d:0,t:0}, 2021:{c:17,d:0,t:0}, 2020:{c:6,d:0,t:0}, 2019:{c:10,d:0,t:0},
-      2018:{c:0,d:0,t:0}, 2017:{c:3,d:0,t:0}, 2016:{c:1,d:0,t:0}, 2015:{c:1,d:0,t:0},
-      2014:{c:0,d:0,t:0}, 2013:{c:0,d:1,t:0}, 2012:{c:0,d:0,t:0}, 2011:{c:0,d:0,t:0}, 2010:{c:0,d:0,t:0},
+    // per year: cre/crh = Carrier 22RE/45RE, dre/drh = Daikin, tre/trh = Thermo King
+    const bkkYBS = {
+      2026:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2025:{cre:0,crh:8,dre:4,drh:0,tre:0,trh:0},
+      2024:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2023:{cre:0,crh:3,dre:0,drh:0,tre:0,trh:0},
+      2022:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2021:{cre:9,crh:17,dre:0,drh:0,tre:0,trh:0},
+      2020:{cre:2,crh:6,dre:0,drh:0,tre:0,trh:0},
+      2019:{cre:2,crh:10,dre:0,drh:0,tre:0,trh:0},
+      2018:{cre:1,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2017:{cre:2,crh:3,dre:0,drh:0,tre:0,trh:0},
+      2016:{cre:2,crh:1,dre:0,drh:0,tre:0,trh:0},
+      2015:{cre:0,crh:1,dre:1,drh:0,tre:0,trh:0},
+      2014:{cre:1,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2013:{cre:1,crh:0,dre:4,drh:1,tre:1,trh:0},
+      2012:{cre:1,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2011:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2010:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
     };
-    const lchBrand = {
-      2026:{c:0,d:0,t:0}, 2025:{c:9,d:0,t:0}, 2024:{c:0,d:0,t:0}, 2023:{c:3,d:0,t:0},
-      2022:{c:0,d:0,t:0}, 2021:{c:4,d:0,t:0}, 2020:{c:8,d:0,t:0}, 2019:{c:13,d:0,t:0},
-      2018:{c:1,d:0,t:0}, 2017:{c:1,d:0,t:0}, 2016:{c:6,d:0,t:0}, 2015:{c:5,d:0,t:0},
-      2014:{c:6,d:0,t:0}, 2013:{c:0,d:2,t:0}, 2012:{c:2,d:0,t:0}, 2011:{c:0,d:3,t:0}, 2010:{c:0,d:0,t:0},
+    const lchYBS = {
+      2026:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2025:{cre:0,crh:9,dre:1,drh:0,tre:0,trh:0},
+      2024:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2023:{cre:0,crh:3,dre:0,drh:0,tre:0,trh:0},
+      2022:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
+      2021:{cre:1,crh:4,dre:0,drh:0,tre:0,trh:0},
+      2020:{cre:0,crh:8,dre:0,drh:0,tre:0,trh:0},
+      2019:{cre:0,crh:13,dre:0,drh:0,tre:0,trh:0},
+      2018:{cre:0,crh:1,dre:0,drh:0,tre:0,trh:0},
+      2017:{cre:2,crh:1,dre:0,drh:0,tre:0,trh:0},
+      2016:{cre:1,crh:6,dre:0,drh:0,tre:0,trh:0},
+      2015:{cre:0,crh:5,dre:0,drh:0,tre:0,trh:0},
+      2014:{cre:0,crh:6,dre:0,drh:0,tre:0,trh:0},
+      2013:{cre:0,crh:0,dre:2,drh:2,tre:0,trh:0},
+      2012:{cre:0,crh:2,dre:1,drh:0,tre:0,trh:0},
+      2011:{cre:0,crh:0,dre:0,drh:3,tre:0,trh:0},
+      2010:{cre:0,crh:0,dre:0,drh:0,tre:0,trh:0},
     };
 
-    function fillBrandTable(tbodyId, brandData){
+    function bandClass(y){
+      if (y >= 2021) return 'band-green';
+      if (y >= 2016) return 'band-yellow';
+      if (y >= 2011) return 'band-brown';
+      return 'band-red';
+    }
+
+    function fillYBSTable(tbodyId, data){
       const tbody = document.getElementById(tbodyId);
-      const z = (v)=> v===0 ? '' : v;
+      const z = (v)=> v === 0 ? '' : v;
+      const keys = ['cre','crh','dre','drh','tre','trh'];
       let rows = years.map(y=>{
-        const g = brandData[y];
-        return `<tr><td>${y}</td><td class="num">${z(g.c)}</td><td class="num">${z(g.d)}</td><td class="num">${z(g.t)}</td></tr>`;
+        const g = data[y];
+        const cells = keys.map(k => `<td class="num">${z(g[k])}</td>`).join('');
+        return `<tr class="${bandClass(y)}"><td>${y}</td>${cells}</tr>`;
       }).join('');
-      const totC = years.reduce((s,y)=>s+brandData[y].c,0);
-      const totD = years.reduce((s,y)=>s+brandData[y].d,0);
-      const totT = years.reduce((s,y)=>s+brandData[y].t,0);
-      rows += `<tr class="av"><td>Total</td><td class="num">${totC}</td><td class="num">${totD}</td><td class="num">${totT}</td></tr>`;
+      const totals = keys.map(k => years.reduce((s,y)=>s+data[y][k], 0));
+      rows += `<tr class="av"><td>GTTL</td>${totals.map(v=>`<td class="num">${v}</td>`).join('')}</tr>`;
       tbody.innerHTML = rows;
     }
-    fillBrandTable('tbodyYearBkk', bkkBrand);
-    fillBrandTable('tbodyYearLch', lchBrand);
+    fillYBSTable('tbodyYearBkk', bkkYBS);
+    fillYBSTable('tbodyYearLch', lchYBS);
   })();
 })();
 </script>
