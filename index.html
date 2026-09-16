@@ -169,11 +169,21 @@
       </table>
     </div>
     <p class="note" style="margin:16px 0 8px;"><strong>AV</strong> = stock with move code IED / IEP / IER (available) &middot; <strong>DMG</strong> = move code EOR (damaged)</p>
-    <div class="chart-wrap">
-      <table>
-        <thead><tr><th>Remarks</th><th class="num">20'RE</th><th class="num">40'RH</th><th style="width:26px"></th><th class="lbl">Remarks</th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
-        <tbody id="tbodyRemarks"></tbody>
-      </table>
+    <div class="charts-row">
+      <div class="chart-wrap">
+        <table>
+          <thead><tr><th class="depot-head bkk" colspan="3" style="text-align:left">BKK27 / BC2 &mdash; Remarks</th></tr>
+            <tr><th></th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
+          <tbody id="tbodyRemarksBkk"></tbody>
+        </table>
+      </div>
+      <div class="chart-wrap">
+        <table>
+          <thead><tr><th class="depot-head lch" colspan="3" style="text-align:left">LCH27 / HAST &mdash; Remarks</th></tr>
+            <tr><th></th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
+          <tbody id="tbodyRemarksLch"></tbody>
+        </table>
+      </div>
     </div>
   </section>
 
@@ -246,17 +256,23 @@
     return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
   }).join('');
 
-  // ---- Remarks: AV (IED/IEP/IER) and DMG (EOR) counts ----
+  // ---- Remarks: AV (IED/IEP/IER) and DMG (EOR) counts, split by depot ----
   (function(){
-    const remarks = [
-      {label:"AV (available)", bkk:[27,26], lch:[7,38]},
-      {label:"DMG (damaged)", bkk:[0,0], lch:[0,0]},
+    const remarksBkk = [
+      {label:"AV (available)", v:[27,26]},
+      {label:"DMG (damaged)", v:[0,0]},
     ];
-    const tbodyR = document.getElementById('tbodyRemarks');
-    tbodyR.innerHTML = remarks.map(r=>{
+    const remarksLch = [
+      {label:"AV (available)", v:[7,38]},
+      {label:"DMG (damaged)", v:[0,0]},
+    ];
+    function fillRemarks(tbodyId, data){
+      const tbody = document.getElementById(tbodyId);
       const cell = (v)=> `<td class="num">${v}</td>`;
-      return `<tr><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
-    }).join('');
+      tbody.innerHTML = data.map(r => `<tr><td>${r.label}</td>${cell(r.v[0])}${cell(r.v[1])}</tr>`).join('');
+    }
+    fillRemarks('tbodyRemarksBkk', remarksBkk);
+    fillRemarks('tbodyRemarksLch', remarksLch);
   })();
 
   // ---- RF Seasonal: stock by build year, brand x size ----
