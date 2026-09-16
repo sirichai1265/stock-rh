@@ -159,10 +159,7 @@
   <section class="card">
     <h2>RF Seasonal &mdash; stock by build year</h2>
     <p class="note">40'RH (45RE) empty stock by container build year, 2020&ndash;2026. All units in this window are Carrier-brand.</p>
-    <div class="chart-wrap">
-      <svg id="chartYear" viewBox="0 0 820 320" width="820" height="320" role="img" aria-label="Grouped bar chart of 40'RH stock by build year 2020 to 2026, BKK27 versus LCH27"></svg>
-    </div>
-    <div class="stats" style="margin-top:16px;">
+    <div class="stats">
       <div class="stat bkk">
         <div class="k">BKK27 &middot; 2020&ndash;26 built</div>
         <div class="v num">34</div>
@@ -222,18 +219,9 @@
     return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td>${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
   }).join('');
 
-  const ns = 'http://www.w3.org/2000/svg';
-  const el = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
-  // SVG presentation attributes set via JS don't reliably resolve CSS var() in
-  // every renderer, so resolve to plain hex once and use that everywhere below.
-  const cssVar = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  const COLOR = { bkk: cssVar('--bkk'), lch: cssVar('--lch'), neg: cssVar('--neg'), surface: cssVar('--surface') };
-
   // ---- RF Seasonal: stock by build year ----
   (function(){
     const years = [2026,2025,2024,2023,2022,2021,2020];
-    const bkk = {2026:0,2025:8,2024:0,2023:3,2022:0,2021:17,2020:6};
-    const lch = {2026:0,2025:9,2024:0,2023:3,2022:0,2021:4,2020:8};
     // brand split, 45RE only - all 2020-2026 units on hand are Carrier-brand
     const bkkBrand = {
       2026:{c:0,d:0,t:0}, 2025:{c:8,d:0,t:0}, 2024:{c:0,d:0,t:0}, 2023:{c:3,d:0,t:0},
@@ -259,52 +247,6 @@
     }
     fillBrandTable('tbodyYearBkk', bkkBrand);
     fillBrandTable('tbodyYearLch', lchBrand);
-
-    const svg = document.getElementById('chartYear');
-    const W = 820, H = 320;
-    const padL = 34, padR = 12, padT = 30, padB = 40;
-    const plotW = W - padL - padR, plotH = H - padT - padB;
-    const maxV = Math.max(...years.map(y=>Math.max(bkk[y], lch[y])));
-    const yMax = Math.ceil(maxV/5)*5 || 5;
-    const yTicks = 4;
-    const groupW = plotW / years.length;
-    const barW = Math.min(30, groupW*0.30);
-    const gap = 6;
-    const yScale = v => padT + plotH - (v/yMax)*plotH;
-
-    const band = el('rect', {x:padL, y:padT, width:plotW, height:plotH, class:'band-rect'});
-    svg.appendChild(band);
-    const bandTag = el('text', {x:padL+6, y:padT+16, class:'band-tag'});
-    bandTag.textContent = 'DURIAN WINDOW 2020–2026';
-    svg.appendChild(bandTag);
-
-    for(let i=0;i<=yTicks;i++){
-      const v = (yMax/yTicks)*i;
-      const y = yScale(v);
-      svg.appendChild(el('line', {x1:padL, x2:W-padR, y1:y, y2:y, class:'gridline'}));
-      const t = el('text', {x:6, y:y+4, class:'axis-label'}); t.textContent = Math.round(v); svg.appendChild(t);
-    }
-
-    years.forEach((y, i)=>{
-      const cx = padL + groupW*i + groupW/2;
-      const bx = cx - barW - gap/2;
-      const lx = cx + gap/2;
-      const bH = plotH - (yScale(bkk[y]) - padT);
-      const lH = plotH - (yScale(lch[y]) - padT);
-
-      svg.appendChild(el('rect', {x:bx, y:yScale(bkk[y]), width:barW, height:Math.max(bH,0), rx:4, fill:COLOR.bkk}));
-      svg.appendChild(el('rect', {x:lx, y:yScale(lch[y]), width:barW, height:Math.max(lH,0), rx:4, fill:COLOR.lch}));
-
-      if(bkk[y] > 0){
-        const t = el('text', {x:bx+barW/2, y:yScale(bkk[y])-6, class:'bar-label', 'text-anchor':'middle'}); t.textContent = bkk[y]; svg.appendChild(t);
-      }
-      if(lch[y] > 0){
-        const t = el('text', {x:lx+barW/2, y:yScale(lch[y])-6, class:'bar-label', 'text-anchor':'middle'}); t.textContent = lch[y]; svg.appendChild(t);
-      }
-      const yl = el('text', {x:cx, y:H-padB+22, class:'year-label', 'text-anchor':'middle'}); yl.textContent = y; svg.appendChild(yl);
-    });
-
-    svg.appendChild(el('line', {x1:padL, x2:W-padR, y1:padT+plotH, y2:padT+plotH, class:'gridline'}));
   })();
 })();
 </script>
