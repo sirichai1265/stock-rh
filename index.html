@@ -1,0 +1,266 @@
+<title>RF Seasonal</title>
+<meta name="description" content="40'RH reefer fleet by build year, 2020-2026, BKK27 vs LCH27">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+  :root{
+    color-scheme: light;
+    --bg:#f3f6f7;
+    --surface:#ffffff;
+    --surface-2:#eaf0f2;
+    --ink:#0f1a20;
+    --ink-2:#54646b;
+    --ink-3:#8b979c;
+    --line:#d7e0e2;
+    --bkk:#2a78d6;
+    --bkk-soft:#dce9f9;
+    --lch:#eb6834;
+    --lch-soft:#fbe3d5;
+    --band:#f6e7c8;
+    --band-line:#d8b968;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      color-scheme: dark;
+      --bg:#0d1417;
+      --surface:#141d21;
+      --surface-2:#1b262b;
+      --ink:#eef4f5;
+      --ink-2:#a9b8bd;
+      --ink-3:#71828a;
+      --line:#26333a;
+      --bkk:#3987e5;
+      --bkk-soft:#1c2e42;
+      --lch:#d95926;
+      --lch-soft:#3a2418;
+      --band:#3a3116;
+      --band-line:#7a6428;
+    }
+  }
+  :root[data-theme="dark"]{
+    color-scheme: dark;
+    --bg:#0d1417;
+    --surface:#141d21;
+    --surface-2:#1b262b;
+    --ink:#eef4f5;
+    --ink-2:#a9b8bd;
+    --ink-3:#71828a;
+    --line:#26333a;
+    --bkk:#3987e5;
+    --bkk-soft:#1c2e42;
+    --lch:#d95926;
+    --lch-soft:#3a2418;
+    --band:#3a3116;
+    --band-line:#7a6428;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"Public Sans",-apple-system,"Segoe UI",sans-serif;
+    padding-inline:20px;
+    padding-block:28px;
+    display:flex;
+    justify-content:center;
+  }
+  .num{font-family:"IBM Plex Mono","SF Mono",monospace; font-variant-numeric: tabular-nums;}
+
+  .page{width:100%; max-width:920px; display:flex; flex-direction:column; gap:22px;}
+
+  header{display:flex; flex-direction:column; gap:6px;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600;
+    letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
+  }
+  h1{margin:0; font-size:clamp(26px,5vw,34px); font-weight:800; letter-spacing:-.01em; text-wrap:balance;}
+  .sub{margin:0; color:var(--ink-2); font-size:14.5px; max-width:60ch; line-height:1.5;}
+
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin-top:2px;}
+  .legend-item{display:flex; align-items:center; gap:7px; font-size:13px; font-weight:600; color:var(--ink-2);}
+  .swatch{width:11px; height:11px; border-radius:3px; flex:none;}
+
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:22px;
+  }
+
+  .chart-card h2, .table-card h2{
+    margin:0 0 2px;
+    font-size:13px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-2);
+  }
+  .chart-note{font-size:12.5px; color:var(--ink-3); margin:0 0 16px;}
+
+  .chart-wrap{overflow-x:auto;}
+  svg{display:block; overflow:visible;}
+  .gridline{stroke:var(--line); stroke-width:1;}
+  .axis-label{fill:var(--ink-3); font-size:11px; font-family:"IBM Plex Mono",monospace;}
+  .year-label{fill:var(--ink-2); font-size:12.5px; font-weight:600; font-family:"Public Sans",sans-serif;}
+  .bar-label{fill:var(--ink); font-size:11.5px; font-weight:600; font-family:"IBM Plex Mono",monospace;}
+  .band-rect{fill:var(--band);}
+  .band-edge{stroke:var(--band-line); stroke-width:1.5; stroke-dasharray:3 3;}
+  .band-tag{fill:var(--band-line); font-size:10.5px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; font-family:"IBM Plex Mono",monospace;}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
+  .stat{
+    background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; display:flex; flex-direction:column; gap:4px;
+  }
+  .stat .k{font-size:11.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);}
+  .stat .v{font-size:26px; font-weight:800; line-height:1;}
+  .stat .d{font-size:12px; color:var(--ink-2);}
+  .stat.bkk .v{color:var(--bkk);}
+  .stat.lch .v{color:var(--lch);}
+
+  table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  th,td{padding:9px 10px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap;}
+  th:first-child,td:first-child{text-align:left;}
+  thead th{font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);}
+  tbody tr:last-child td{border-bottom:none;}
+  tr.total td{font-weight:700; border-top:1.5px solid var(--line);}
+  td.num, th.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric: tabular-nums;}
+  td.hi{color:var(--ink);}
+
+  footer{font-size:12px; color:var(--ink-3); text-align:center; padding-top:4px;}
+
+  @media (max-width:520px){
+    .card{padding:16px;}
+    .stats{grid-template-columns:1fr 1fr;}
+  }
+</style>
+
+<div class="page">
+
+  <header>
+    <div class="eyebrow">Heung-A Line &middot; Reefer Fleet</div>
+    <h1>RF Seasonal</h1>
+    <p class="sub">40'RH (45RE) empty stock at BKK27 and LCH27, by container build year. The shaded band marks the 2020&ndash;2026 window used for durian-season readiness.</p>
+    <div class="legend">
+      <div class="legend-item"><span class="swatch" style="background:var(--bkk)"></span>BKK27 &middot; BC2</div>
+      <div class="legend-item"><span class="swatch" style="background:var(--lch)"></span>LCH27 &middot; HAST</div>
+    </div>
+  </header>
+
+  <section class="card chart-card">
+    <h2>Stock by build year</h2>
+    <p class="chart-note">Reading: 2021-built units are BKK27's single largest cohort (17 units); all 2020&ndash;2026 40'RH units currently on hand are Carrier-brand.</p>
+    <div class="chart-wrap">
+      <svg id="chart" viewBox="0 0 820 340" width="820" height="340" role="img" aria-label="Grouped bar chart of 40'RH stock by build year 2020 to 2026, BKK27 versus LCH27"></svg>
+    </div>
+  </section>
+
+  <section class="stats">
+    <div class="stat bkk">
+      <div class="k">BKK27 &middot; 2020&ndash;26 built</div>
+      <div class="v num">34</div>
+      <div class="d">of 50 total 40'RH on hand (68%)</div>
+    </div>
+    <div class="stat lch">
+      <div class="k">LCH27 &middot; 2020&ndash;26 built</div>
+      <div class="v num">24</div>
+      <div class="d">of 63 total 40'RH on hand (38%)</div>
+    </div>
+    <div class="stat">
+      <div class="k">Combined seasonal stock</div>
+      <div class="v num">58</div>
+      <div class="d">100% Carrier-brand units</div>
+    </div>
+    <div class="stat">
+      <div class="k">Peak build year</div>
+      <div class="v num">2021</div>
+      <div class="d">21 units across both depots</div>
+    </div>
+  </section>
+
+  <section class="card table-card">
+    <h2>Build-year detail</h2>
+    <div class="chart-wrap">
+      <table>
+        <thead>
+          <tr><th>Year built</th><th class="num">BKK27</th><th class="num">LCH27</th><th class="num">Combined</th></tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer>Source: 9-16-STAYING-RH.xls &middot; as of 16 SEP 2026 &middot; 40'RH (45RE) empty stock only</footer>
+
+</div>
+
+<script>
+(function(){
+  const years = [2026,2025,2024,2023,2022,2021,2020];
+  const bkk = {2026:0,2025:8,2024:0,2023:3,2022:0,2021:17,2020:6};
+  const lch = {2026:0,2025:9,2024:0,2023:3,2022:0,2021:4,2020:8};
+
+  // ---- table ----
+  const tbody = document.getElementById('tbody');
+  let rowsHtml = '';
+  years.forEach(y=>{
+    const b = bkk[y], l = lch[y];
+    rowsHtml += `<tr><td>${y}</td><td class="num${b?' hi':''}">${b}</td><td class="num${l?' hi':''}">${l}</td><td class="num hi">${b+l}</td></tr>`;
+  });
+  const totalB = years.reduce((s,y)=>s+bkk[y],0);
+  const totalL = years.reduce((s,y)=>s+lch[y],0);
+  rowsHtml += `<tr class="total"><td>Total</td><td class="num">${totalB}</td><td class="num">${totalL}</td><td class="num">${totalB+totalL}</td></tr>`;
+  tbody.innerHTML = rowsHtml;
+
+  // ---- chart ----
+  const svg = document.getElementById('chart');
+  const W = 820, H = 340;
+  const padL = 34, padR = 12, padT = 14, padB = 46;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxV = Math.max(...years.map(y=>Math.max(bkk[y], lch[y]))) ;
+  const yMax = Math.ceil(maxV/5)*5 || 5;
+  const yTicks = 4;
+
+  const groupW = plotW / years.length;
+  const barW = Math.min(30, groupW*0.30);
+  const gap = 6;
+
+  const yScale = v => padT + plotH - (v/yMax)*plotH;
+
+  const ns = 'http://www.w3.org/2000/svg';
+  const el = (tag, attrs) => { const e = document.createElementNS(ns, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); return e; };
+
+  // seasonal band (whole plot, since all years shown are within the window) -> instead mark left/right edge ticks
+  const band = el('rect', {x:padL, y:padT, width:plotW, height:plotH, class:'band-rect'});
+  svg.appendChild(band);
+  svg.appendChild(el('text', {x:padL+6, y:padT+16, class:'band-tag'})).textContent = 'DURIAN WINDOW 2020–2026';
+
+  // gridlines + y labels
+  for(let i=0;i<=yTicks;i++){
+    const v = (yMax/yTicks)*i;
+    const y = yScale(v);
+    svg.appendChild(el('line', {x1:padL, x2:W-padR, y1:y, y2:y, class:'gridline'}));
+    const t = el('text', {x:6, y:y+4, class:'axis-label'}); t.textContent = Math.round(v); svg.appendChild(t);
+  }
+
+  years.forEach((y, i)=>{
+    const cx = padL + groupW*i + groupW/2;
+    const bx = cx - barW - gap/2;
+    const lx = cx + gap/2;
+
+    const bH = plotH - (yScale(bkk[y]) - padT);
+    const lH = plotH - (yScale(lch[y]) - padT);
+
+    const barB = el('rect', {x:bx, y:yScale(bkk[y]), width:barW, height:Math.max(bH,0), rx:4, fill:'var(--bkk)'});
+    const barL = el('rect', {x:lx, y:yScale(lch[y]), width:barW, height:Math.max(lH,0), rx:4, fill:'var(--lch)'});
+    svg.appendChild(barB); svg.appendChild(barL);
+
+    if(bkk[y] > 0){
+      const t = el('text', {x:bx+barW/2, y:yScale(bkk[y])-6, class:'bar-label', 'text-anchor':'middle'}); t.textContent = bkk[y]; svg.appendChild(t);
+    }
+    if(lch[y] > 0){
+      const t = el('text', {x:lx+barW/2, y:yScale(lch[y])-6, class:'bar-label', 'text-anchor':'middle'}); t.textContent = lch[y]; svg.appendChild(t);
+    }
+
+    const yl = el('text', {x:cx, y:H-padB+22, class:'year-label', 'text-anchor':'middle'}); yl.textContent = y; svg.appendChild(yl);
+  });
+
+  svg.appendChild(el('line', {x1:padL, x2:W-padR, y1:padT+plotH, y2:padT+plotH, class:'gridline'}));
+})();
+</script>
