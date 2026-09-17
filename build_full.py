@@ -12,8 +12,8 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\9-17-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\9-17-PD+BKG-3WK-RH.xls"
+STOCK = r"C:\Users\HAL-USER\Desktop\20260917\9-17-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\20260917\9-17-PD+BKG-3WK-RH.xls"
 OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-17.xlsx"
 REPORT_DATE = _dt.date(2026, 9, 17)
 MERGE_END_DATE = _dt.date(2026, 10, 11)  # fold 5-11 Oct bookings into the last displayed week (user request)
@@ -575,11 +575,13 @@ def draw_card_border(ws, r0, r1, c0, c1):
 
 
 def stat_card(ws, row0, c0, c1, label, value_formula, desc, color="1A1A1A"):
-    lc = ws.cell(row0, c0, label); db_merge_row(ws, row0, c0, c1)
+    # cells are left unmerged (single starting cell, natural text overflow) -
+    # merging KPI cards made them fussy to resize/reflow, so keep it simple
+    lc = ws.cell(row0, c0, label)
     lc.font = DB_LABEL; lc.alignment = Alignment(horizontal="left")
-    vc = ws.cell(row0 + 1, c0, value_formula); db_merge_row(ws, row0 + 1, c0, c1)
+    vc = ws.cell(row0 + 1, c0, value_formula)
     vc.font = Font(bold=True, size=20, color=color); vc.alignment = Alignment(horizontal="left")
-    dc = ws.cell(row0 + 2, c0, desc); db_merge_row(ws, row0 + 2, c0, c1)
+    dc = ws.cell(row0 + 2, c0, desc)
     dc.font = DB_LIGHT; dc.alignment = Alignment(horizontal="left")
     draw_card_border(ws, row0, row0 + 2, c0, c1)
 
@@ -587,11 +589,11 @@ def stat_card(ws, row0, c0, c1, label, value_formula, desc, color="1A1A1A"):
 TR = "'TOTAL RH'!"  # sheet-qualified reference prefix
 
 # ---- title banner ----
-db.merge_cells(start_row=1, start_column=2, end_row=2, end_column=19)
+db.merge_cells(start_row=1, start_column=2, end_row=2, end_column=16)
 title_cell = db.cell(1, 2, "=" + TR + "A1")
 title_cell.font = Font(bold=True, size=16, color="FFFFFF")
 title_cell.alignment = Alignment(horizontal="left", vertical="center")
-for cc in range(2, 20):
+for cc in range(2, 17):
     for rr in (1, 2):
         db.cell(rr, cc).fill = banner
 try:
@@ -611,7 +613,7 @@ except Exception as _e:
 
 # ---- KPI stat cards ----
 KPI_ROW = 4
-kpi_cols = [(2, 5), (7, 10), (12, 15), (17, 20)]
+kpi_cols = [(2, 4), (6, 8), (10, 12), (14, 16)]
 stat_card(db, KPI_ROW, *kpi_cols[0], "SHORTFALL ALERT",
           "=MIN(%sD12,%sJ12)" % (TR, TR), "BKK27/LCH27 40'RH, worse balance till 3 OCT", color="C62828")
 stat_card(db, KPI_ROW, *kpi_cols[1], "COMBINED 40'RH STOCK",
@@ -635,7 +637,7 @@ det_rows = [
     ("Booking 28 SEP-3 OCT", "C11", "D11", False, False),
     ("AV Balance till 3 OCT", "C12", "D12", False, True),
 ]
-det_depot_cols = {"BKK27": 2, "LCH27": 9}
+det_depot_cols = {"BKK27": 2, "LCH27": 8}
 det_depot_ref_col = {"BKK27": ("C", "D"), "LCH27": ("I", "J")}
 for loc in LOCS:
     c0 = det_depot_cols[loc]
@@ -695,11 +697,11 @@ def _sum2026_2020_45re(loc):
     return "=" + "+".join(terms)
 
 
-stat_card(db, rfs_kpi_row, 2, 5, "BKK27 2020-26 BUILT", _sum2026_2020_45re("BKK27"),
+stat_card(db, rfs_kpi_row, 2, 4, "BKK27 2020-26 BUILT", _sum2026_2020_45re("BKK27"),
           "of 40'RH on hand", color="2A78D6")
-stat_card(db, rfs_kpi_row, 7, 10, "LCH27 2020-26 BUILT", _sum2026_2020_45re("LCH27"),
+stat_card(db, rfs_kpi_row, 6, 8, "LCH27 2020-26 BUILT", _sum2026_2020_45re("LCH27"),
           "of 40'RH on hand", color="EB6834")
-stat_card(db, rfs_kpi_row, 12, 15, "PEAK BUILD YEAR", "=\"%s\"" % PEAK_YEAR_LABEL,
+stat_card(db, rfs_kpi_row, 10, 12, "PEAK BUILD YEAR", "=\"%s\"" % PEAK_YEAR_LABEL,
           "%d units across both depots" % PEAK_YEAR_UNITS)
 
 # current brand mix (GTTL row), one compact table per depot
@@ -730,7 +732,16 @@ for loc in LOCS:
     db.column_dimensions[col_letter(c0)].width = 22
     db.column_dimensions[col_letter(c0 + 1)].width = 9
     db.column_dimensions[col_letter(c0 + 2)].width = 9
-db.column_dimensions[col_letter(6)].width = 3
+# narrow spacer columns everywhere else on the sheet, instead of leaving
+# them at Excel's default (much wider) auto-width
+_used_cols = set()
+for c0 in det_depot_cols.values():
+    _used_cols.update([c0, c0 + 1, c0 + 2])
+for c0, c1 in kpi_cols:
+    _used_cols.update(range(c0, c1 + 1))
+for cc in range(2, 17):
+    if cc not in _used_cols:
+        db.column_dimensions[col_letter(cc)].width = 2.5
 db.freeze_panes = "B3"
 
 # ---------------- normalize font to Calibri 11 everywhere, row height 13 ----------------
