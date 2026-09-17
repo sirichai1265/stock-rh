@@ -87,6 +87,18 @@ for loc in LOCS:
     tbl.append(gtot)
     year_tables[loc] = tbl
 
+# combined 45RE-by-year total across both depots, for the "peak build year" stat
+_year_45re_combined = {}
+for y in YEARS_FIXED:
+    total = 0
+    for loc in LOCS:
+        row = next(r for r in year_tables[loc] if r["Year"] == y)
+        total += sum(row[(b, "45RE")] for b in BRANDS)
+    _year_45re_combined[y] = total
+PEAK_YEAR, PEAK_YEAR_UNITS = max(_year_45re_combined.items(), key=lambda kv: kv[1])
+_peak_ties = [y for y, v in _year_45re_combined.items() if v == PEAK_YEAR_UNITS]
+PEAK_YEAR_LABEL = " / ".join(str(y) for y in sorted(_peak_ties, reverse=True)) if len(_peak_ties) > 1 else str(PEAK_YEAR)
+
 # ================= workbook =================
 wb = openpyxl.Workbook()
 
@@ -409,6 +421,7 @@ for cc in (MINI_COL, MINI_COL + 1, MINI_COL + 2):
 
 # ---------------- "5 years for durian season" mini table (45RE by brand) ----------------
 DUR_ROW0 = REM_BOTTOM + 3
+DUR_TOTAL_ROW = {}
 for loc, title in DEPOT_TITLE.items():
     base = START_COL[loc]
     last_col = base + 3  # Year + 3 brands = 4 cols
@@ -441,6 +454,7 @@ for loc, title in DEPOT_TITLE.items():
     sm.cell(r, base, "TOTAL").font = BOLD; sm.cell(r, base).alignment = ctr
     for i in range(3):
         c = sm.cell(r, base + 1 + i, sums[i]); c.font = BOLD; c.alignment = ctr
+    DUR_TOTAL_ROW[loc] = r
     over5 = stock[loc]["45RE"] - sum(sums)
     r += 1
     sm.cell(r, base + 3, over5).fill = yellow
@@ -479,14 +493,18 @@ BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 
 N_COLS = 1 + len(BRANDS) * len(SIZES)
 col0 = 2
+YBS_COL0 = {}
+YBS_HR = {}
 for loc, label in LOCS.items():
     last_col = col0 + N_COLS - 1
+    YBS_COL0[loc] = col0
 
     sm.merge_cells(start_row=YBS_ROW0, start_column=col0, end_row=YBS_ROW0, end_column=last_col)
     t = sm.cell(YBS_ROW0, col0, "%s  \u2014  Stock by Built Year x Brand x Size" % label)
     t.fill = TITLE_FILL; t.font = WHITE; t.alignment = ctr
 
     hr = YBS_ROW0 + 1
+    YBS_HR[loc] = hr
     sm.merge_cells(start_row=hr, start_column=col0, end_row=hr + 1, end_column=col0)
     c0 = sm.cell(hr, col0, "YEAR\nBUILT")
     c0.fill = HEAD_FILL; c0.font = WHITE; c0.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -535,6 +553,186 @@ for loc, label in LOCS.items():
 
 sm.freeze_panes = "B4"
 
+# ==================== Dashboard sheet (KPI-card style) ====================
+db = wb.create_sheet("Dashboard")
+db.sheet_view.showGridLines = False
+
+DB_LIGHT = Font(size=9, color="808080")
+DB_LABEL = Font(bold=True, size=9, color="808080")
+thin_card = Side(style="thin", color="D9D9D9")
+CARD_BORDER = Border(left=thin_card, right=thin_card, top=thin_card, bottom=thin_card)
+
+
+def db_merge_row(ws, row, c0, c1):
+    if c1 > c0:
+        ws.merge_cells(start_row=row, start_column=c0, end_row=row, end_column=c1)
+
+
+def draw_card_border(ws, r0, r1, c0, c1):
+    for r in range(r0, r1 + 1):
+        for c in range(c0, c1 + 1):
+            ws.cell(r, c).border = CARD_BORDER
+
+
+def stat_card(ws, row0, c0, c1, label, value_formula, desc, color="1A1A1A"):
+    lc = ws.cell(row0, c0, label); db_merge_row(ws, row0, c0, c1)
+    lc.font = DB_LABEL; lc.alignment = Alignment(horizontal="left")
+    vc = ws.cell(row0 + 1, c0, value_formula); db_merge_row(ws, row0 + 1, c0, c1)
+    vc.font = Font(bold=True, size=20, color=color); vc.alignment = Alignment(horizontal="left")
+    dc = ws.cell(row0 + 2, c0, desc); db_merge_row(ws, row0 + 2, c0, c1)
+    dc.font = DB_LIGHT; dc.alignment = Alignment(horizontal="left")
+    draw_card_border(ws, row0, row0 + 2, c0, c1)
+
+
+TR = "'TOTAL RH'!"  # sheet-qualified reference prefix
+
+# ---- title banner ----
+db.merge_cells(start_row=1, start_column=2, end_row=2, end_column=19)
+title_cell = db.cell(1, 2, "=" + TR + "A1")
+title_cell.font = Font(bold=True, size=16, color="FFFFFF")
+title_cell.alignment = Alignment(horizontal="left", vertical="center")
+for cc in range(2, 20):
+    for rr in (1, 2):
+        db.cell(rr, cc).fill = banner
+try:
+    from openpyxl.drawing.image import Image as XLImage
+    logo_candidates = [
+        r"C:\Users\HAL-USER\Desktop\STOCK RH\logo ha2.png",
+        r"C:\Users\HAL-USER\Desktop\logo ha2.png",
+    ]
+    logo_path = next((p for p in logo_candidates if __import__("os").path.exists(p)), None)
+    if logo_path:
+        img = XLImage(logo_path)
+        img.height = 42
+        img.width = 170
+        db.add_image(img, "R1")
+except Exception as _e:
+    print("logo embed skipped:", _e)
+
+# ---- KPI stat cards ----
+KPI_ROW = 4
+kpi_cols = [(2, 5), (7, 10), (12, 15), (17, 20)]
+stat_card(db, KPI_ROW, *kpi_cols[0], "SHORTFALL ALERT",
+          "=MIN(%sD12,%sJ12)" % (TR, TR), "BKK27/LCH27 40'RH, worse balance till 3 OCT", color="C62828")
+stat_card(db, KPI_ROW, *kpi_cols[1], "COMBINED 40'RH STOCK",
+          "=%sO5" % TR, "BKK27 + LCH27")
+stat_card(db, KPI_ROW, *kpi_cols[2], "COMBINED 40'RH BOOKING",
+          "=%sO10" % TR, "pending + all weeks")
+stat_card(db, KPI_ROW, *kpi_cols[3], "COMBINED 40'RH BALANCE",
+          "=%sO15" % TR, "till 3 OCT, both depots", color="C62828")
+
+# ---- Detail by depot (two card-tables) ----
+DET_ROW0 = KPI_ROW + 4
+db.cell(DET_ROW0, 2, "DETAIL BY DEPOT").font = Font(bold=True, size=11, color="0D3B12")
+det_rows = [
+    ("Stock empty in yard", "C4", "D4", True, False),
+    ("Booking Pending pick up", "C5", "D5", False, False),
+    ("Booking on today", "C6", "D6", False, False),
+    ("Booking rest of this week", "C7", "D7", False, False),
+    ("AV Balance till 19 SEP", "C8", "D8", False, True),
+    ("Booking 21-26 SEP", "C9", "D9", False, False),
+    ("AV Balance till 26 SEP", "C10", "D10", False, True),
+    ("Booking 28 SEP-3 OCT", "C11", "D11", False, False),
+    ("AV Balance till 3 OCT", "C12", "D12", False, True),
+]
+det_depot_cols = {"BKK27": 2, "LCH27": 9}
+det_depot_ref_col = {"BKK27": ("C", "D"), "LCH27": ("I", "J")}
+for loc in LOCS:
+    c0 = det_depot_cols[loc]
+    hdr = db.cell(DET_ROW0 + 1, c0, "=%s%s2" % (TR, "B" if loc == "BKK27" else "H"))
+    db_merge_row(db, DET_ROW0 + 1, c0, c0 + 2)
+    hdr.font = Font(bold=True, size=12, color=("2A78D6" if loc == "BKK27" else "EB6834"))
+    db.cell(DET_ROW0 + 2, c0 + 1, "20'RE").font = BOLD
+    db.cell(DET_ROW0 + 2, c0 + 2, "40'RH").font = BOLD
+    for i, (lbl, re_ref, rh_ref, is_stock, is_av) in enumerate(det_rows):
+        rr = DET_ROW0 + 3 + i
+        lc = db.cell(rr, c0, lbl); lc.font = BOLD if (is_stock or is_av) else Font()
+        vcol_re, vcol_rh = det_depot_ref_col[loc]
+        ve = db.cell(rr, c0 + 1, "=%s%s%s" % (TR, vcol_re, re_ref[1:]))
+        vh = db.cell(rr, c0 + 2, "=%s%s%s" % (TR, vcol_rh, rh_ref[1:]))
+        for cell in (ve, vh):
+            cell.alignment = ctr
+            if is_stock or is_av:
+                cell.font = BOLD
+        if is_stock:
+            for cc in range(c0, c0 + 3):
+                db.cell(rr, cc).fill = grey
+        elif is_av:
+            for cc in range(c0, c0 + 3):
+                db.cell(rr, cc).fill = yellow
+    draw_card_border(db, DET_ROW0 + 1, DET_ROW0 + 2 + len(det_rows), c0, c0 + 2)
+
+# ---- Remarks (AV/DMG) ----
+REM_DB_ROW0 = DET_ROW0 + 3 + len(det_rows) + 2
+db.cell(REM_DB_ROW0, 2, "REMARKS  (AV = move code IED/IEP/IER, DMG = move code OER)").font = Font(bold=True, size=11, color="0D3B12")
+for loc in LOCS:
+    c0 = det_depot_cols[loc]
+    hdr = db.cell(REM_DB_ROW0 + 1, c0, "=%s%s2" % (TR, "B" if loc == "BKK27" else "H"))
+    db_merge_row(db, REM_DB_ROW0 + 1, c0, c0 + 2)
+    hdr.font = Font(bold=True, size=11, color=("2A78D6" if loc == "BKK27" else "EB6834"))
+    db.cell(REM_DB_ROW0 + 2, c0 + 1, "20'RE").font = BOLD
+    db.cell(REM_DB_ROW0 + 2, c0 + 2, "40'RH").font = BOLD
+    vcol_re, vcol_rh = det_depot_ref_col[loc]
+    for i, rlabel in enumerate(("AV", "DMG")):
+        rr = REM_DB_ROW0 + 3 + i
+        db.cell(rr, c0, rlabel)
+        db.cell(rr, c0 + 1, "=%s%s%d" % (TR, vcol_re, 16 + i)).alignment = ctr
+        db.cell(rr, c0 + 2, "=%s%s%d" % (TR, vcol_rh, 16 + i)).alignment = ctr
+    draw_card_border(db, REM_DB_ROW0 + 1, REM_DB_ROW0 + 4, c0, c0 + 2)
+
+# ---- RF Seasonal stat cards + current-mix summary ----
+RFS_ROW0 = REM_DB_ROW0 + 7
+db.cell(RFS_ROW0, 2, "RF SEASONAL \u2014 build year").font = Font(bold=True, size=11, color="0D3B12")
+rfs_kpi_row = RFS_ROW0 + 1
+
+
+def _sum2026_2020_45re(loc):
+    # YEARS_FIXED starts at 2026 descending, so rows hr+2 .. hr+8 are years 2026..2020
+    ycol = YBS_COL0[loc]
+    r0, r1 = YBS_HR[loc] + 2, YBS_HR[loc] + 8
+    cols_45re = [col_letter(ycol + 2 + 2 * i) for i in range(len(BRANDS))]  # Carrier/Daikin/Thermo 45RE cols
+    terms = ["SUM(%s%s%d:%s%d)" % (TR, c, r0, c, r1) for c in cols_45re]
+    return "=" + "+".join(terms)
+
+
+stat_card(db, rfs_kpi_row, 2, 5, "BKK27 2020-26 BUILT", _sum2026_2020_45re("BKK27"),
+          "of 40'RH on hand", color="2A78D6")
+stat_card(db, rfs_kpi_row, 7, 10, "LCH27 2020-26 BUILT", _sum2026_2020_45re("LCH27"),
+          "of 40'RH on hand", color="EB6834")
+stat_card(db, rfs_kpi_row, 12, 15, "PEAK BUILD YEAR", "=\"%s\"" % PEAK_YEAR_LABEL,
+          "%d units across both depots" % PEAK_YEAR_UNITS)
+
+# current brand mix (GTTL row), one compact table per depot
+MIX_ROW0 = rfs_kpi_row + 4
+for loc in LOCS:
+    c0 = det_depot_cols[loc]
+    ycol = YBS_COL0[loc]
+    grow = YBS_HR[loc] + 2 + len(YEARS_FIXED)
+    hdr = db.cell(MIX_ROW0, c0, "%s current mix" % loc)
+    db_merge_row(db, MIX_ROW0, c0, c0 + 2)
+    hdr.font = Font(bold=True, size=10, color=("2A78D6" if loc == "BKK27" else "EB6834"))
+    for i, b in enumerate(BRANDS):
+        db.cell(MIX_ROW0 + 1, c0 + 1, "22RE").font = BOLD
+        db.cell(MIX_ROW0 + 1, c0 + 2, "45RE").font = BOLD
+        rr = MIX_ROW0 + 2 + i
+        db.cell(rr, c0, b)
+        cre = col_letter(ycol + 1 + 2 * i)
+        crh = col_letter(ycol + 2 + 2 * i)
+        db.cell(rr, c0 + 1, "=%s%s%d" % (TR, cre, grow)).alignment = ctr
+        db.cell(rr, c0 + 2, "=%s%s%d" % (TR, crh, grow)).alignment = ctr
+    draw_card_border(db, MIX_ROW0, MIX_ROW0 + 1 + len(BRANDS), c0, c0 + 2)
+db.cell(MIX_ROW0 + 2 + len(BRANDS) + 1, 2,
+        "Full 2010-2026 Year x Brand x Size breakdown is on the TOTAL RH sheet.").font = DB_LIGHT
+
+db.column_dimensions["A"].width = 3
+for loc in LOCS:
+    c0 = det_depot_cols[loc]
+    db.column_dimensions[col_letter(c0)].width = 22
+    db.column_dimensions[col_letter(c0 + 1)].width = 9
+    db.column_dimensions[col_letter(c0 + 2)].width = 9
+db.column_dimensions[col_letter(6)].width = 3
+db.freeze_panes = "B3"
+
 # ---------------- normalize font to Calibri 11 everywhere, row height 13 ----------------
 for ws in wb.worksheets:
     for row in ws.iter_rows():
@@ -547,7 +745,7 @@ for ws in wb.worksheets:
             ws.row_dimensions[r].height = 13
 
 # open the workbook showing TOTAL RH, not Control
-_active_idx = wb.sheetnames.index("TOTAL RH")
+_active_idx = wb.sheetnames.index("Dashboard")
 wb.active = _active_idx
 for i, ws in enumerate(wb.worksheets):
     ws.sheet_view.tabSelected = (i == _active_idx)

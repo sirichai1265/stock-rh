@@ -52,6 +52,23 @@ for lbl_col in label_cols:
                 if neg:
                     neg_cells.append(cell)
 
+# ---- Dashboard sheet: color any negative numeric cell red (the "AV Balance
+# ..." rows in the Detail-by-depot table; KPI-card colors are set once in
+# build_full.py and left alone here) ----
+if "Dashboard" in wb.sheetnames:
+    db = wb["Dashboard"]
+    dsumm = vals.get("DASHBOARD", {})
+    dash_neg = []
+    for row in db.iter_rows(min_row=9):  # skip the KPI card row block above row 9
+        for cell in row:
+            if isinstance(cell.value, str) and cell.value.startswith("="):
+                v = dsumm.get(cell.coordinate)
+                if isinstance(v, (int, float)) and v < 0:
+                    f = cell.font
+                    cell.font = Font(name=f.name, size=f.size, bold=True, color="C62828")
+                    dash_neg.append(cell.coordinate)
+    print("dashboard negative:", dash_neg)
+
 wb.calculation.fullCalcOnLoad = True
 wb.save(F)
 print("AV balances:", report)
