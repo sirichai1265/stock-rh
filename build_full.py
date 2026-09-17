@@ -12,10 +12,11 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\9-14-STAYING.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\9-14-BKG+PD.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-14.xlsx"
-REPORT_DATE = _dt.date(2026, 9, 14)  # filenames say 9-14; system clock is behind, so pin it
+STOCK = r"C:\Users\HAL-USER\Desktop\9-17-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\9-17-PD+BKG-3WK-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-17.xlsx"
+REPORT_DATE = _dt.date(2026, 9, 17)
+MERGE_END_DATE = _dt.date(2026, 10, 11)  # fold 5-11 Oct bookings into the last displayed week (user request)
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
 DEPOT_TITLE = {"BKK27": "BKK / BC2 (BKK27)", "LCH27": "LCH / HAST (LCH27)"}
@@ -111,6 +112,30 @@ for r in range(2, br.max_row + 1):
     br.cell(r, 2).number_format = "yyyy-mm-dd"
 
 type_cols = [chr(ord("C") + i) for i in range(len(TYPES))]  # BookingRaw cols C, D
+
+# ---------------- StockRaw: per-container Move Code, for the AV/DMG remarks ----------------
+sr = wb.create_sheet("StockRaw")
+sr.append(["Location", "Size/Type", "Move Code"])
+st_raw = st[st["Size/Type"].isin(SIZES)]
+for _, row in st_raw.iterrows():
+    sr.append([row["Location"], row["Size/Type"], str(row["Move Code"])])
+SR_LAST = max(sr.max_row, 2)
+
+AV_CODES = ["IED", "IEP", "IER"]
+DMG_CODE = "OER"
+
+
+def av_formula(loc, sz):
+    parts = [
+        'COUNTIFS(StockRaw!$A$2:$A$%d,"%s",StockRaw!$B$2:$B$%d,"%s",StockRaw!$C$2:$C$%d,"%s")'
+        % (SR_LAST, loc, SR_LAST, sz, SR_LAST, code) for code in AV_CODES
+    ]
+    return "=" + "+".join(parts)
+
+
+def dmg_formula(loc, sz):
+    return '=COUNTIFS(StockRaw!$A$2:$A$%d,"%s",StockRaw!$B$2:$B$%d,"%s",StockRaw!$C$2:$C$%d,"%s")' % (
+        SR_LAST, loc, SR_LAST, sz, SR_LAST, DMG_CODE)
 
 
 def mon(d):
@@ -222,16 +247,23 @@ for loc, label in LOCS.items():
             sm.cell(r, base + 1 + i, "=%s%d-%s%d-%s%d-%s%d" % (cL, stock_row, cL, pending_row[loc], cL, 6, cL, 7))
         av_prev = r
 
-        fwd_ctrl = [("Control!$B5", "Control!$C5", "Control!$A$5"), ("Control!$B6", "Control!$C6", "Control!$A$6")]
+        merge_date_formula = "DATE(%d,%d,%d)" % (MERGE_END_DATE.year, MERGE_END_DATE.month, MERGE_END_DATE.day)
+        fwd_ctrl = [
+            ("Control!$B5", "Control!$C5", "Control!$A$5", "Control!$C5"),
+            # last displayed week: label still reads "till Control!$C6" (e.g. 3 OCT) but the
+            # SUMIFS upper bound is widened to MERGE_END_DATE, folding later bookings
+            # (e.g. 5-11 Oct) into this row per user request rather than dropping them.
+            ("Control!$B6", "Control!$C6", "Control!$A$6", merge_date_formula),
+        ]
         r = 9
-        for mon_ref, sat_ref, wk_ref in fwd_ctrl:
+        for mon_ref, sat_label_ref, wk_ref, sat_value_ref in fwd_ctrl:
             sm.cell(r, wk_col_idx, "=%s" % wk_ref)
-            sm.cell(r, base, rng_label(mon_ref, sat_ref))
+            sm.cell(r, base, rng_label(mon_ref, sat_label_ref))
             for i, colL in enumerate(type_cols):
-                sm.cell(r, base + 1 + i, sif(colL, loc, dc(">=", mon_ref) + "," + dc("<=", sat_ref)))
+                sm.cell(r, base + 1 + i, sif(colL, loc, dc(">=", mon_ref) + "," + dc("<=", sat_value_ref)))
             bkrows.append(r)
             r += 1
-            sm.cell(r, base, av_label(sat_ref))
+            sm.cell(r, base, av_label(sat_label_ref))
             for i in range(N):
                 cL = col_letter(base + 1 + i)
                 sm.cell(r, base + 1 + i, "=%s%d-%s%d" % (cL, av_prev, cL, r - 1))
@@ -315,6 +347,26 @@ for loc, label in LOCS.items():
 
 wb.calculation.fullCalcOnLoad = True
 
+# ---------------- Remarks: AV (move code IED/IEP/IER) and DMG (move code OER) ----------------
+REM_ROW0 = BLOCK_BOTTOM + 2
+sm.cell(REM_ROW0, 1, "Remarks:").font = Font(bold=True, italic=True)
+sm.cell(REM_ROW0, 1).alignment = Alignment(horizontal="left")
+note = sm.cell(REM_ROW0, 2, "AV = stock with move code IED / IEP / IER (available)   |   DMG = move code OER (damaged)")
+note.font = Font(italic=True, size=9)
+REM_HDR = REM_ROW0 + 1
+for loc, label in LOCS.items():
+    base = START_COL[loc]
+    for i, (disp, scode, _) in enumerate(TYPES):
+        c = sm.cell(REM_HDR, base + 1 + i, disp)
+        c.font = BOLD; c.alignment = ctr
+    sm.cell(REM_HDR + 1, base, "AV").alignment = lft
+    sm.cell(REM_HDR + 2, base, "DMG").alignment = lft
+    for i, (disp, scode, _) in enumerate(TYPES):
+        cc = base + 1 + i
+        sm.cell(REM_HDR + 1, cc, av_formula(loc, scode)).alignment = ctr
+        sm.cell(REM_HDR + 2, cc, dmg_formula(loc, scode)).alignment = ctr
+REM_BOTTOM = REM_HDR + 2
+
 # ---------------- mini Stock/Booking/Balance (22RE|45RE) roll-up ----------------
 MINI_COL = max(START_COL.values()) + N + 3  # a couple columns after the LCH27 block
 DEPOT_ROWLABEL = {"BKK27": "BC", "LCH27": "HAST"}
@@ -356,7 +408,7 @@ for cc in (MINI_COL, MINI_COL + 1, MINI_COL + 2):
     sm.column_dimensions[col_letter(cc)].width = 9
 
 # ---------------- "5 years for durian season" mini table (45RE by brand) ----------------
-DUR_ROW0 = BLOCK_BOTTOM + 3
+DUR_ROW0 = REM_BOTTOM + 3
 for loc, title in DEPOT_TITLE.items():
     base = START_COL[loc]
     last_col = base + 3  # Year + 3 brands = 4 cols
