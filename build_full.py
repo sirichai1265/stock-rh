@@ -12,10 +12,10 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\20260917\9-17-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\20260917\9-17-PD+BKG-3WK-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-17.xlsx"
-REPORT_DATE = _dt.date(2026, 9, 17)
+STOCK = r"C:\Users\HAL-USER\Desktop\9-18-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\9-18-PD+BKG-3WKS-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-18.xlsx"
+REPORT_DATE = _dt.date(2026, 9, 18)
 MERGE_END_DATE = _dt.date(2026, 10, 11)  # fold 5-11 Oct bookings into the last displayed week (user request)
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
@@ -614,44 +614,46 @@ except Exception as _e:
 # ---- KPI stat cards ----
 KPI_ROW = 4
 kpi_cols = [(2, 4), (6, 8), (10, 12), (14, 16)]
+last_row_bkk = last_av_row["BKK27"]
+last_row_lch = last_av_row["LCH27"]
 stat_card(db, KPI_ROW, *kpi_cols[0], "SHORTFALL ALERT",
-          "=MIN(%sD12,%sJ12)" % (TR, TR), "BKK27/LCH27 40'RH, worse balance till 3 OCT", color="C62828")
+          "=MIN(%sD%d,%sJ%d)" % (TR, last_row_bkk, TR, last_row_lch),
+          "=\"BKK27/LCH27 40'RH, worse \"&%sB%d" % (TR, last_row_bkk), color="C62828")
 stat_card(db, KPI_ROW, *kpi_cols[1], "COMBINED 40'RH STOCK",
           "=%sO5" % TR, "BKK27 + LCH27")
 stat_card(db, KPI_ROW, *kpi_cols[2], "COMBINED 40'RH BOOKING",
           "=%sO10" % TR, "pending + all weeks")
 stat_card(db, KPI_ROW, *kpi_cols[3], "COMBINED 40'RH BALANCE",
-          "=%sO15" % TR, "till 3 OCT, both depots", color="C62828")
+          "=%sO15" % TR,
+          "=\"pending + all weeks, both depots, \"&%sB%d" % (TR, last_row_bkk), color="C62828")
 
 # ---- Detail by depot (two card-tables) ----
+# Row structure (stock/pending/booking/AV-balance rows and how many of them)
+# depends on RULE (Mon-Thu vs Fri), so mirror TOTAL RH's actual row range for
+# each depot live - both depots share the same RULE-driven row count, only
+# the values differ - instead of a hardcoded Rule-1-shaped row list.
 DET_ROW0 = KPI_ROW + 4
 db.cell(DET_ROW0, 2, "DETAIL BY DEPOT").font = Font(bold=True, size=11, color="0D3B12")
-det_rows = [
-    ("Stock empty in yard", "C4", "D4", True, False),
-    ("Booking Pending pick up", "C5", "D5", False, False),
-    ("Booking on today", "C6", "D6", False, False),
-    ("Booking rest of this week", "C7", "D7", False, False),
-    ("AV Balance till 19 SEP", "C8", "D8", False, True),
-    ("Booking 21-26 SEP", "C9", "D9", False, False),
-    ("AV Balance till 26 SEP", "C10", "D10", False, True),
-    ("Booking 28 SEP-3 OCT", "C11", "D11", False, False),
-    ("AV Balance till 3 OCT", "C12", "D12", False, True),
-]
 det_depot_cols = {"BKK27": 2, "LCH27": 8}
 det_depot_ref_col = {"BKK27": ("C", "D"), "LCH27": ("I", "J")}
+det_row_range = list(range(4, block_bottom["BKK27"] + 1))  # canonical row sequence, same for both depots
 for loc in LOCS:
     c0 = det_depot_cols[loc]
-    hdr = db.cell(DET_ROW0 + 1, c0, "=%s%s2" % (TR, "B" if loc == "BKK27" else "H"))
+    lbl_col = "B" if loc == "BKK27" else "H"
+    hdr = db.cell(DET_ROW0 + 1, c0, "=%s%s2" % (TR, lbl_col))
     db_merge_row(db, DET_ROW0 + 1, c0, c0 + 2)
     hdr.font = Font(bold=True, size=12, color=("2A78D6" if loc == "BKK27" else "EB6834"))
     db.cell(DET_ROW0 + 2, c0 + 1, "20'RE").font = BOLD
     db.cell(DET_ROW0 + 2, c0 + 2, "40'RH").font = BOLD
-    for i, (lbl, re_ref, rh_ref, is_stock, is_av) in enumerate(det_rows):
+    vcol_re, vcol_rh = det_depot_ref_col[loc]
+    for i, src_r in enumerate(det_row_range):
         rr = DET_ROW0 + 3 + i
-        lc = db.cell(rr, c0, lbl); lc.font = BOLD if (is_stock or is_av) else Font()
-        vcol_re, vcol_rh = det_depot_ref_col[loc]
-        ve = db.cell(rr, c0 + 1, "=%s%s%s" % (TR, vcol_re, re_ref[1:]))
-        vh = db.cell(rr, c0 + 2, "=%s%s%s" % (TR, vcol_rh, rh_ref[1:]))
+        is_stock = (src_r == 4)
+        is_av = (not is_stock) and (src_r != pending_row[loc]) and (src_r not in booking_rows[loc])
+        lc = db.cell(rr, c0, "=%s%s%d" % (TR, lbl_col, src_r))
+        lc.font = BOLD if (is_stock or is_av) else Font()
+        ve = db.cell(rr, c0 + 1, "=%s%s%d" % (TR, vcol_re, src_r))
+        vh = db.cell(rr, c0 + 2, "=%s%s%d" % (TR, vcol_rh, src_r))
         for cell in (ve, vh):
             cell.alignment = ctr
             if is_stock or is_av:
@@ -662,10 +664,10 @@ for loc in LOCS:
         elif is_av:
             for cc in range(c0, c0 + 3):
                 db.cell(rr, cc).fill = yellow
-    draw_card_border(db, DET_ROW0 + 1, DET_ROW0 + 2 + len(det_rows), c0, c0 + 2)
+    draw_card_border(db, DET_ROW0 + 1, DET_ROW0 + 2 + len(det_row_range), c0, c0 + 2)
 
 # ---- Remarks (AV/DMG) ----
-REM_DB_ROW0 = DET_ROW0 + 3 + len(det_rows) + 2
+REM_DB_ROW0 = DET_ROW0 + 3 + len(det_row_range) + 2
 db.cell(REM_DB_ROW0, 2, "REMARKS  (AV = move code IED/IEP/IER, DMG = move code OER)").font = Font(bold=True, size=11, color="0D3B12")
 for loc in LOCS:
     c0 = det_depot_cols[loc]
@@ -677,9 +679,10 @@ for loc in LOCS:
     vcol_re, vcol_rh = det_depot_ref_col[loc]
     for i, rlabel in enumerate(("AV", "DMG")):
         rr = REM_DB_ROW0 + 3 + i
+        src_r = REM_HDR + 1 + i  # REM_HDR+1 = AV row, REM_HDR+2 = DMG row on TOTAL RH
         db.cell(rr, c0, rlabel)
-        db.cell(rr, c0 + 1, "=%s%s%d" % (TR, vcol_re, 16 + i)).alignment = ctr
-        db.cell(rr, c0 + 2, "=%s%s%d" % (TR, vcol_rh, 16 + i)).alignment = ctr
+        db.cell(rr, c0 + 1, "=%s%s%d" % (TR, vcol_re, src_r)).alignment = ctr
+        db.cell(rr, c0 + 2, "=%s%s%d" % (TR, vcol_rh, src_r)).alignment = ctr
     draw_card_border(db, REM_DB_ROW0 + 1, REM_DB_ROW0 + 4, c0, c0 + 2)
 
 # ---- RF Seasonal stat cards + current-mix summary ----
