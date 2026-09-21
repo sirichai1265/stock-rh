@@ -12,11 +12,11 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\9-18-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\9-18-PD+BKG-3WKS-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-18.xlsx"
-REPORT_DATE = _dt.date(2026, 9, 18)
-MERGE_END_DATE = _dt.date(2026, 10, 11)  # fold 5-11 Oct bookings into the last displayed week (user request)
+STOCK = r"C:\Users\HAL-USER\Desktop\9-21-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\9-21-PD+BKG-3WK-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-21.xlsx"
+REPORT_DATE = _dt.date(2026, 9, 21)
+MERGE_END_DATE = _dt.date(2026, 10, 18)  # fold WK41 (12-18 Oct) stray bookings into the last displayed week
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
 DEPOT_TITLE = {"BKK27": "BKK / BC2 (BKK27)", "LCH27": "LCH / HAST (LCH27)"}
@@ -48,11 +48,29 @@ stock = {loc: {code: int((st[(st["Location"] == loc) & (st["Size/Type"] == code)
 print("STOCK", stock)
 
 # ---------------- booking ----------------
-bk = pd.read_excel(BKG, header=0)
+# The pivot export's header row shifts around (extra blank/"Data" rows above
+# it vary by day), so scan the first block of rows for the one that actually
+# contains "Pickup" and "TRAN DT" instead of assuming a fixed offset.
+_bk_raw = pd.read_excel(BKG, header=None, nrows=10)
+_hdr_row = None
+for _i in range(len(_bk_raw)):
+    _vals = set(str(v).strip() for v in _bk_raw.iloc[_i].tolist())
+    if {"Pickup", "TRAN DT"} <= _vals:
+        _hdr_row = _i
+        break
+if _hdr_row is None:
+    raise ValueError("could not find booking header row (Pickup/TRAN DT) in %s" % BKG)
+bk = pd.read_excel(BKG, header=_hdr_row)
 bk.columns = [str(c).strip() for c in bk.columns]
-if not {"Pickup", "TRAN DT"} <= set(bk.columns):
-    bk = pd.read_excel(BKG, header=1)
-    bk.columns = [str(c).strip() for c in bk.columns]
+if "Sum of RE22" in bk.columns:
+    # weekly pivot export: Pickup/WEEK are only filled on each group's first
+    # row (subtotal/"Total" rows interleaved) and the sheet repeats the same
+    # combined table again per-location in side-by-side column blocks with
+    # duplicate header names (deduped by pandas to "Pickup.1"/"Pickup.2" etc.)
+    # - use only the first, combined block and forward-fill the group labels.
+    bk = bk[["Pickup", "TRAN DT", "Sum of RE22", "Sum of RE45"]].copy()
+    bk["Pickup"] = bk["Pickup"].ffill()
+    bk = bk.rename(columns={"Sum of RE22": "RE22", "Sum of RE45": "RE45"})
 bk = bk[bk["Pickup"].isin(LOCS)].copy()
 bk["date"] = pd.to_datetime(
     bk["TRAN DT"].astype(str).str.replace(".0", "", regex=False),
