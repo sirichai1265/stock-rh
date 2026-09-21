@@ -569,6 +569,14 @@ for loc, label in LOCS.items():
 
     col0 = last_col + 2
 
+# ---------------- grid lines: thin border on every populated/filled cell ----------------
+# Native gridlines are off (showGridLines=False), so give every section its own
+# ruled table instead of leaving blank-gap rows/columns bordered too.
+for _row in sm.iter_rows(min_row=1, max_row=sm.max_row, min_col=1, max_col=sm.max_column):
+    for _cell in _row:
+        if _cell.value is not None or _cell.fill.fill_type is not None:
+            _cell.border = BORDER
+
 sm.freeze_panes = "B4"
 
 # ==================== Dashboard sheet (KPI-card style) ====================
