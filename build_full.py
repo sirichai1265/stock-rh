@@ -12,11 +12,11 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\9-21-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\9-21-PD+BKG-3WK-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-21.xlsx"
-REPORT_DATE = _dt.date(2026, 9, 21)
-MERGE_END_DATE = _dt.date(2026, 10, 18)  # fold WK41 (12-18 Oct) stray bookings into the last displayed week
+STOCK = r"C:\Users\HAL-USER\Desktop\9-22-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\9-21-BKG-3WK-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-22.xlsx"
+REPORT_DATE = _dt.date(2026, 9, 22)
+MERGE_END_DATE = _dt.date(2026, 10, 17)  # fold stray bookings (max TRAN DT 16 Oct) into the last displayed week (till 10 Oct)
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
 DEPOT_TITLE = {"BKK27": "BKK / BC2 (BKK27)", "LCH27": "LCH / HAST (LCH27)"}
