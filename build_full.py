@@ -12,8 +12,8 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\9-22-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\9-21-BKG-3WK-RH.xls"
+STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\9-22-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\9-21-BKG-3WK-RH.xls"
 OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-22.xlsx"
 REPORT_DATE = _dt.date(2026, 9, 22)
 MERGE_END_DATE = _dt.date(2026, 10, 17)  # fold stray bookings (max TRAN DT 16 Oct) into the last displayed week (till 10 Oct)
@@ -216,6 +216,36 @@ else:
     print("NOTE: report date is a weekend day - user's rule only covers Mon-Thu/Fri; "
           "falling back to the Friday rule (merged Count1, 3 forward weeks).")
 print("weekday=%s -> RULE %d" % (REPORT_DATE.strftime("%A"), RULE))
+
+# ---- generic KPI-card style helpers (used on both TOTAL RH and Dashboard) ----
+DB_LIGHT = Font(size=9, color="808080")
+DB_LABEL = Font(bold=True, size=9, color="808080")
+thin_card = Side(style="thin", color="D9D9D9")
+CARD_BORDER = Border(left=thin_card, right=thin_card, top=thin_card, bottom=thin_card)
+
+
+def db_merge_row(ws, row, c0, c1):
+    if c1 > c0:
+        ws.merge_cells(start_row=row, start_column=c0, end_row=row, end_column=c1)
+
+
+def draw_card_border(ws, r0, r1, c0, c1):
+    for r in range(r0, r1 + 1):
+        for c in range(c0, c1 + 1):
+            ws.cell(r, c).border = CARD_BORDER
+
+
+def stat_card(ws, row0, c0, c1, label, value_formula, desc, color="1A1A1A"):
+    # cells are left unmerged (single starting cell, natural text overflow) -
+    # merging KPI cards made them fussy to resize/reflow, so keep it simple
+    lc = ws.cell(row0, c0, label)
+    lc.font = DB_LABEL; lc.alignment = Alignment(horizontal="left")
+    vc = ws.cell(row0 + 1, c0, value_formula)
+    vc.font = Font(bold=True, size=20, color=color); vc.alignment = Alignment(horizontal="left")
+    dc = ws.cell(row0 + 2, c0, desc)
+    dc.font = DB_LIGHT; dc.alignment = Alignment(horizontal="left")
+    draw_card_border(ws, row0, row0 + 2, c0, c1)
+
 
 sm = wb.create_sheet("TOTAL RH")
 sm.sheet_view.showGridLines = False
@@ -569,6 +599,33 @@ for loc, label in LOCS.items():
 
     col0 = last_col + 2
 
+# ---------------- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN
+# (built <=2020), both depots' 40'RH stock combined, per user spec ----------------
+CARGO_ROW0 = YBS_HR["BKK27"] + 2 + len(YEARS_FIXED) + 3  # a couple rows below the GTTL row
+sm.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (both depots, 40'RH stock, by Built Year)").font = Font(bold=True, italic=True)
+
+
+def _cargo_formula(y_lo, y_hi):
+    # sums the 3 brands' 45RE columns, both depots, across the given
+    # Built-Year row range (inclusive) of the YBS matrix above
+    terms = []
+    for loc in LOCS:
+        ycol = YBS_COL0[loc]
+        r0 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_hi)
+        r1 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_lo)
+        for i in range(len(BRANDS)):
+            c = col_letter(ycol + 2 + 2 * i)
+            terms.append("SUM(%s%d:%s%d)" % (c, r0, c, r1))
+    return "=" + "+".join(terms)
+
+
+cargo_row = CARGO_ROW0 + 1
+stat_card(sm, cargo_row, 2, 5, "DURIAN  (built 2021-2026)",
+          _cargo_formula(2021, 2026), "40'RH, both depots combined", color="2E7D32")
+stat_card(sm, cargo_row, 7, 10, "NON DURIAN  (built ≤ 2020)",
+          _cargo_formula(2010, 2020), "40'RH, both depots combined", color="8B979C")
+CARGO_BOTTOM = cargo_row + 2
+
 # ---------------- grid lines: thin border on every populated/filled cell ----------------
 # Native gridlines are off (showGridLines=False), so give every section its own
 # ruled table instead of leaving blank-gap rows/columns bordered too.
@@ -582,35 +639,6 @@ sm.freeze_panes = "B4"
 # ==================== Dashboard sheet (KPI-card style) ====================
 db = wb.create_sheet("Dashboard")
 db.sheet_view.showGridLines = False
-
-DB_LIGHT = Font(size=9, color="808080")
-DB_LABEL = Font(bold=True, size=9, color="808080")
-thin_card = Side(style="thin", color="D9D9D9")
-CARD_BORDER = Border(left=thin_card, right=thin_card, top=thin_card, bottom=thin_card)
-
-
-def db_merge_row(ws, row, c0, c1):
-    if c1 > c0:
-        ws.merge_cells(start_row=row, start_column=c0, end_row=row, end_column=c1)
-
-
-def draw_card_border(ws, r0, r1, c0, c1):
-    for r in range(r0, r1 + 1):
-        for c in range(c0, c1 + 1):
-            ws.cell(r, c).border = CARD_BORDER
-
-
-def stat_card(ws, row0, c0, c1, label, value_formula, desc, color="1A1A1A"):
-    # cells are left unmerged (single starting cell, natural text overflow) -
-    # merging KPI cards made them fussy to resize/reflow, so keep it simple
-    lc = ws.cell(row0, c0, label)
-    lc.font = DB_LABEL; lc.alignment = Alignment(horizontal="left")
-    vc = ws.cell(row0 + 1, c0, value_formula)
-    vc.font = Font(bold=True, size=20, color=color); vc.alignment = Alignment(horizontal="left")
-    dc = ws.cell(row0 + 2, c0, desc)
-    dc.font = DB_LIGHT; dc.alignment = Alignment(horizontal="left")
-    draw_card_border(ws, row0, row0 + 2, c0, c1)
-
 
 TR = "'TOTAL RH'!"  # sheet-qualified reference prefix
 
@@ -733,8 +761,17 @@ stat_card(db, rfs_kpi_row, 6, 8, "LCH27 2020-26 BUILT", _sum2026_2020_45re("LCH2
 stat_card(db, rfs_kpi_row, 10, 12, "PEAK BUILD YEAR", "=\"%s\"" % PEAK_YEAR_LABEL,
           "%d units across both depots" % PEAK_YEAR_UNITS)
 
+# ---- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN (<=2020) ----
+# live-linked to the TOTAL RH sheet's CARGO CLASSIFICATION cards, not recomputed
+cargo_kpi_row = rfs_kpi_row + 4
+_cargo_value_row = CARGO_ROW0 + 2
+stat_card(db, cargo_kpi_row, 2, 4, "DURIAN CARGO  (2021-2026)",
+          "=%sB%d" % (TR, _cargo_value_row), "40'RH, both depots combined", color="2E7D32")
+stat_card(db, cargo_kpi_row, 6, 8, "NON DURIAN CARGO  (≤ 2020)",
+          "=%sG%d" % (TR, _cargo_value_row), "40'RH, both depots combined", color="8B979C")
+
 # current brand mix (GTTL row), one compact table per depot
-MIX_ROW0 = rfs_kpi_row + 4
+MIX_ROW0 = cargo_kpi_row + 4
 for loc in LOCS:
     c0 = det_depot_cols[loc]
     ycol = YBS_COL0[loc]
