@@ -600,30 +600,34 @@ for loc, label in LOCS.items():
     col0 = last_col + 2
 
 # ---------------- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN
-# (built <=2020), both depots' 40'RH stock combined, per user spec ----------------
+# (built <=2020), 40'RH stock, split by depot per user spec ----------------
 CARGO_ROW0 = YBS_HR["BKK27"] + 2 + len(YEARS_FIXED) + 3  # a couple rows below the GTTL row
-sm.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (both depots, 40'RH stock, by Built Year)").font = Font(bold=True, italic=True)
+sm.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (40'RH stock by Built Year, per depot)").font = Font(bold=True, italic=True)
+
+DEPOT_COLOR = {"BKK27": "2A78D6", "LCH27": "EB6834"}
 
 
-def _cargo_formula(y_lo, y_hi):
-    # sums the 3 brands' 45RE columns, both depots, across the given
+def _cargo_formula_loc(loc, y_lo, y_hi):
+    # sums the 3 brands' 45RE columns for one depot, across the given
     # Built-Year row range (inclusive) of the YBS matrix above
-    terms = []
-    for loc in LOCS:
-        ycol = YBS_COL0[loc]
-        r0 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_hi)
-        r1 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_lo)
-        for i in range(len(BRANDS)):
-            c = col_letter(ycol + 2 + 2 * i)
-            terms.append("SUM(%s%d:%s%d)" % (c, r0, c, r1))
+    ycol = YBS_COL0[loc]
+    r0 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_hi)
+    r1 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_lo)
+    terms = ["SUM(%s%d:%s%d)" % (col_letter(ycol + 2 + 2 * i), r0, col_letter(ycol + 2 + 2 * i), r1)
+              for i in range(len(BRANDS))]
     return "=" + "+".join(terms)
 
 
 cargo_row = CARGO_ROW0 + 1
-stat_card(sm, cargo_row, 2, 5, "DURIAN  (built 2021-2026)",
-          _cargo_formula(2021, 2026), "40'RH, both depots combined", color="2E7D32")
-stat_card(sm, cargo_row, 7, 10, "NON DURIAN  (built ≤ 2020)",
-          _cargo_formula(2010, 2020), "40'RH, both depots combined", color="8B979C")
+cargo_cols = [(2, 4), (6, 8), (10, 12), (14, 16)]
+_ci = 0
+for loc in LOCS:
+    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s DURIAN  (2021-2026)" % loc,
+              _cargo_formula_loc(loc, 2021, 2026), "40'RH stock", color=DEPOT_COLOR[loc])
+    _ci += 1
+    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s NON DURIAN  (≤ 2020)" % loc,
+              _cargo_formula_loc(loc, 2010, 2020), "40'RH stock", color=DEPOT_COLOR[loc])
+    _ci += 1
 CARGO_BOTTOM = cargo_row + 2
 
 # ---------------- grid lines: thin border on every populated/filled cell ----------------
@@ -762,13 +766,16 @@ stat_card(db, rfs_kpi_row, 10, 12, "PEAK BUILD YEAR", "=\"%s\"" % PEAK_YEAR_LABE
           "%d units across both depots" % PEAK_YEAR_UNITS)
 
 # ---- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN (<=2020) ----
-# live-linked to the TOTAL RH sheet's CARGO CLASSIFICATION cards, not recomputed
+# live-linked to the TOTAL RH sheet's CARGO CLASSIFICATION cards (per depot), not recomputed
 cargo_kpi_row = rfs_kpi_row + 4
 _cargo_value_row = CARGO_ROW0 + 2
-stat_card(db, cargo_kpi_row, 2, 4, "DURIAN CARGO  (2021-2026)",
-          "=%sB%d" % (TR, _cargo_value_row), "40'RH, both depots combined", color="2E7D32")
-stat_card(db, cargo_kpi_row, 6, 8, "NON DURIAN CARGO  (≤ 2020)",
-          "=%sG%d" % (TR, _cargo_value_row), "40'RH, both depots combined", color="8B979C")
+for _i, loc in enumerate(LOCS):
+    _col0, _col1 = cargo_cols[2 * _i]
+    stat_card(db, cargo_kpi_row, _col0, _col1, "%s DURIAN  (2021-2026)" % loc,
+              "=%s%s%d" % (TR, col_letter(_col0), _cargo_value_row), "40'RH stock", color=DEPOT_COLOR[loc])
+    _col0, _col1 = cargo_cols[2 * _i + 1]
+    stat_card(db, cargo_kpi_row, _col0, _col1, "%s NON DURIAN  (≤ 2020)" % loc,
+              "=%s%s%d" % (TR, col_letter(_col0), _cargo_value_row), "40'RH stock", color=DEPOT_COLOR[loc])
 
 # current brand mix (GTTL row), one compact table per depot
 MIX_ROW0 = cargo_kpi_row + 4
