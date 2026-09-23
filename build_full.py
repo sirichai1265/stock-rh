@@ -12,11 +12,12 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\9-22-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\9-21-BKG-3WK-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-22.xlsx"
-REPORT_DATE = _dt.date(2026, 9, 22)
-MERGE_END_DATE = _dt.date(2026, 10, 17)  # fold stray bookings (max TRAN DT 16 Oct) into the last displayed week (till 10 Oct)
+STOCK = r"C:\Users\HAL-USER\Desktop\9-23-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\9-23-BKG-3WK-RH.xls"
+PENDING = r"C:\Users\HAL-USER\Desktop\9-23-PENDING-RH.xls"  # optional: overdue/pending bookings (date < today), split out as its own export as of 9-23; set to None if the day's export doesn't split them out
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-23.xlsx"
+REPORT_DATE = _dt.date(2026, 9, 23)
+MERGE_END_DATE = _dt.date(2026, 10, 10)  # last displayed week ends 10 Oct; max booking date this run is also 10 Oct, so no stray data to fold in
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
 DEPOT_TITLE = {"BKK27": "BKK / BC2 (BKK27)", "LCH27": "LCH / HAST (LCH27)"}
@@ -48,36 +49,48 @@ stock = {loc: {code: int((st[(st["Location"] == loc) & (st["Size/Type"] == code)
 print("STOCK", stock)
 
 # ---------------- booking ----------------
-# The pivot export's header row shifts around (extra blank/"Data" rows above
-# it vary by day), so scan the first block of rows for the one that actually
-# contains "Pickup" and "TRAN DT" instead of assuming a fixed offset.
-_bk_raw = pd.read_excel(BKG, header=None, nrows=10)
-_hdr_row = None
-for _i in range(len(_bk_raw)):
-    _vals = set(str(v).strip() for v in _bk_raw.iloc[_i].tolist())
-    if {"Pickup", "TRAN DT"} <= _vals:
-        _hdr_row = _i
-        break
-if _hdr_row is None:
-    raise ValueError("could not find booking header row (Pickup/TRAN DT) in %s" % BKG)
-bk = pd.read_excel(BKG, header=_hdr_row)
-bk.columns = [str(c).strip() for c in bk.columns]
-if "Sum of RE22" in bk.columns:
-    # weekly pivot export: Pickup/WEEK are only filled on each group's first
-    # row (subtotal/"Total" rows interleaved) and the sheet repeats the same
-    # combined table again per-location in side-by-side column blocks with
-    # duplicate header names (deduped by pandas to "Pickup.1"/"Pickup.2" etc.)
-    # - use only the first, combined block and forward-fill the group labels.
-    bk = bk[["Pickup", "TRAN DT", "Sum of RE22", "Sum of RE45"]].copy()
-    bk["Pickup"] = bk["Pickup"].ffill()
-    bk = bk.rename(columns={"Sum of RE22": "RE22", "Sum of RE45": "RE45"})
-bk = bk[bk["Pickup"].isin(LOCS)].copy()
-bk["date"] = pd.to_datetime(
-    bk["TRAN DT"].astype(str).str.replace(".0", "", regex=False),
-    format="%Y%m%d", errors="coerce")
-for _, _, bcode in TYPES:
-    bk[bcode] = pd.to_numeric(bk.get(bcode, 0), errors="coerce").fillna(0).astype(int)
-bk = bk[bk["date"].notna()]
+def load_booking(path):
+    # The export's header row shifts around (extra blank/"Data" rows above it
+    # vary by day), so scan the first block of rows for the one that actually
+    # contains "Pickup" and "TRAN DT" instead of assuming a fixed offset.
+    _raw = pd.read_excel(path, header=None, nrows=10)
+    _hdr_row = None
+    for _i in range(len(_raw)):
+        _vals = set(str(v).strip() for v in _raw.iloc[_i].tolist())
+        if {"Pickup", "TRAN DT"} <= _vals:
+            _hdr_row = _i
+            break
+    if _hdr_row is None:
+        raise ValueError("could not find booking header row (Pickup/TRAN DT) in %s" % path)
+    df = pd.read_excel(path, header=_hdr_row)
+    df.columns = [str(c).strip() for c in df.columns]
+    if "Sum of RE22" in df.columns:
+        # weekly pivot export: Pickup/WEEK are only filled on each group's first
+        # row (subtotal/"Total" rows interleaved) and the sheet repeats the same
+        # combined table again per-location in side-by-side column blocks with
+        # duplicate header names (deduped by pandas to "Pickup.1"/"Pickup.2" etc.)
+        # - use only the first, combined block and forward-fill the group labels.
+        df = df[["Pickup", "TRAN DT", "Sum of RE22", "Sum of RE45"]].copy()
+        df["Pickup"] = df["Pickup"].ffill()
+        df = df.rename(columns={"Sum of RE22": "RE22", "Sum of RE45": "RE45"})
+    df = df[df["Pickup"].isin(LOCS)].copy()
+    df["date"] = pd.to_datetime(
+        df["TRAN DT"].astype(str).str.replace(".0", "", regex=False),
+        format="%Y%m%d", errors="coerce")
+    for _, _, bcode in TYPES:
+        df[bcode] = pd.to_numeric(df.get(bcode, 0), errors="coerce").fillna(0).astype(int)
+    df = df[df["date"].notna()]
+    return df
+
+
+bk_parts = [load_booking(BKG)]
+if PENDING:
+    # as of 9-23, overdue/pending bookings (date < today) come as their own
+    # export rather than being included in the forward-looking BKG file -
+    # combine both into one raw pool; the "Pending pick up" row's SUMIFS
+    # already filters by date < Control!$B$1 regardless of source file.
+    bk_parts.append(load_booking(PENDING))
+bk = pd.concat(bk_parts, ignore_index=True)
 rows = bk[["Pickup", "date"] + [b for _, _, b in TYPES]].values.tolist()
 print("booking rows", len(rows))
 
