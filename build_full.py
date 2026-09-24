@@ -12,11 +12,11 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\9-23-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\9-23-BKG-3WK-RH.xls"
-PENDING = r"C:\Users\HAL-USER\Desktop\9-23-PENDING-RH.xls"  # optional: overdue/pending bookings (date < today), split out as its own export as of 9-23; set to None if the day's export doesn't split them out
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-23.xlsx"
-REPORT_DATE = _dt.date(2026, 9, 23)
+STOCK = r"C:\Users\HAL-USER\Desktop\9-24-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\9-24-BKG-3WK-RH.xls"
+PENDING = r"C:\Users\HAL-USER\Desktop\9-24-PENDING-RH.xls"  # optional: overdue/pending bookings (date < today), split out as its own export as of 9-23; set to None if the day's export doesn't split them out
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_9-24.xlsx"
+REPORT_DATE = _dt.date(2026, 9, 24)
 MERGE_END_DATE = _dt.date(2026, 10, 10)  # last displayed week ends 10 Oct; max booking date this run is also 10 Oct, so no stray data to fold in
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
