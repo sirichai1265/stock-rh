@@ -522,8 +522,46 @@ for loc, title in DEPOT_TITLE.items():
     sm.cell(r, base + 2, "OVER 5 Y").alignment = Alignment(horizontal="right")
     DUR_BOTTOM = r
 
+# ---------------- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN
+# (built <=2020), 40'RH stock, split by depot per user spec - placed right after
+# the durian mini table, before the full Year x Brand x Size matrix below (user
+# hand-edit, 2026-09-30: moved up from after the full matrix) ----------------
+N_COLS = 1 + len(BRANDS) * len(SIZES)
+YBS_COL0 = {"BKK27": 2, "LCH27": 2 + N_COLS + 1}  # deterministic column layout (col0, last_col=col0+N_COLS-1, next col0=last_col+2), independent of row order
+
+CARGO_ROW0 = DUR_BOTTOM + 3
+sm.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (40'RH stock by Built Year, per depot)").font = Font(bold=True, italic=True)
+
+DEPOT_COLOR = {"BKK27": "2A78D6", "LCH27": "EB6834"}
+
+cargo_row = CARGO_ROW0 + 1
+CARGO_BOTTOM = cargo_row + 2
+YBS_ROW0 = CARGO_BOTTOM + 3
+YBS_HR = {"BKK27": YBS_ROW0 + 1, "LCH27": YBS_ROW0 + 1}  # both depots' matrices share the same header row
+
+
+def _cargo_formula_loc(loc, y_lo, y_hi):
+    # sums the 3 brands' 45RE columns for one depot, across the given
+    # Built-Year row range (inclusive) of the YBS matrix built further below
+    ycol = YBS_COL0[loc]
+    r0 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_hi)
+    r1 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_lo)
+    terms = ["SUM(%s%d:%s%d)" % (col_letter(ycol + 2 + 2 * i), r0, col_letter(ycol + 2 + 2 * i), r1)
+              for i in range(len(BRANDS))]
+    return "=" + "+".join(terms)
+
+
+cargo_cols = [(2, 4), (6, 8), (10, 12), (14, 16)]
+_ci = 0
+for loc in LOCS:
+    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s DURIAN  (2021-2026)" % loc,
+              _cargo_formula_loc(loc, 2021, 2026), "40'RH stock", color=DEPOT_COLOR[loc])
+    _ci += 1
+    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s NON DURIAN  (≤ 2020)" % loc,
+              _cargo_formula_loc(loc, 2010, 2020), "40'RH stock", color=DEPOT_COLOR[loc])
+    _ci += 1
+
 # ---------------- full Built-Year x Brand x Size stock matrix ----------------
-YBS_ROW0 = DUR_BOTTOM + 3
 TITLE_FILL = banner
 HEAD_FILL = green
 SUBHEAD_FILL = PatternFill("solid", fgColor="66BB6A")
@@ -552,10 +590,7 @@ def year_band_fill(y):
 thin = Side(style="thin", color="BFBFBF")
 BORDER = Border(left=thin, right=thin, top=thin, bottom=thin)
 
-N_COLS = 1 + len(BRANDS) * len(SIZES)
 col0 = 2
-YBS_COL0 = {}
-YBS_HR = {}
 for loc, label in LOCS.items():
     last_col = col0 + N_COLS - 1
     YBS_COL0[loc] = col0
@@ -612,37 +647,6 @@ for loc, label in LOCS.items():
 
     col0 = last_col + 2
 
-# ---------------- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN
-# (built <=2020), 40'RH stock, split by depot per user spec ----------------
-CARGO_ROW0 = YBS_HR["BKK27"] + 2 + len(YEARS_FIXED) + 3  # a couple rows below the GTTL row
-sm.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (40'RH stock by Built Year, per depot)").font = Font(bold=True, italic=True)
-
-DEPOT_COLOR = {"BKK27": "2A78D6", "LCH27": "EB6834"}
-
-
-def _cargo_formula_loc(loc, y_lo, y_hi):
-    # sums the 3 brands' 45RE columns for one depot, across the given
-    # Built-Year row range (inclusive) of the YBS matrix above
-    ycol = YBS_COL0[loc]
-    r0 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_hi)
-    r1 = YBS_HR[loc] + 2 + (YEARS_FIXED[0] - y_lo)
-    terms = ["SUM(%s%d:%s%d)" % (col_letter(ycol + 2 + 2 * i), r0, col_letter(ycol + 2 + 2 * i), r1)
-              for i in range(len(BRANDS))]
-    return "=" + "+".join(terms)
-
-
-cargo_row = CARGO_ROW0 + 1
-cargo_cols = [(2, 4), (6, 8), (10, 12), (14, 16)]
-_ci = 0
-for loc in LOCS:
-    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s DURIAN  (2021-2026)" % loc,
-              _cargo_formula_loc(loc, 2021, 2026), "40'RH stock", color=DEPOT_COLOR[loc])
-    _ci += 1
-    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s NON DURIAN  (≤ 2020)" % loc,
-              _cargo_formula_loc(loc, 2010, 2020), "40'RH stock", color=DEPOT_COLOR[loc])
-    _ci += 1
-CARGO_BOTTOM = cargo_row + 2
-
 # ---------------- grid lines: thin border on every populated/filled cell ----------------
 # Native gridlines are off (showGridLines=False), so give every section its own
 # ruled table instead of leaving blank-gap rows/columns bordered too.
@@ -660,11 +664,13 @@ db.sheet_view.showGridLines = False
 TR = "'TOTAL RH'!"  # sheet-qualified reference prefix
 
 # ---- title banner ----
-db.merge_cells(start_row=1, start_column=2, end_row=2, end_column=16)
+# narrowed 2026-09-30 (user hand-edit) from B:P to B:L, now that the KPI row
+# only has 3 cards instead of 4; the logo sits just past its right edge
+db.merge_cells(start_row=1, start_column=2, end_row=2, end_column=12)
 title_cell = db.cell(1, 2, "=" + TR + "A1")
 title_cell.font = Font(bold=True, size=16, color="FFFFFF")
 title_cell.alignment = Alignment(horizontal="left", vertical="center")
-for cc in range(2, 17):
+for cc in range(2, 13):
     for rr in (1, 2):
         db.cell(rr, cc).fill = banner
 try:
@@ -678,7 +684,7 @@ try:
         img = XLImage(logo_path)
         img.height = 42
         img.width = 170
-        db.add_image(img, "R1")
+        db.add_image(img, "M1")  # just past the banner's new right edge (col 12)
 except Exception as _e:
     print("logo embed skipped:", _e)
 
@@ -694,9 +700,8 @@ stat_card(db, KPI_ROW, *kpi_cols[1], "COMBINED 40'RH STOCK",
           "=%sO5" % TR, "BKK27 + LCH27")
 stat_card(db, KPI_ROW, *kpi_cols[2], "COMBINED 40'RH BOOKING",
           "=%sO10" % TR, "pending + all weeks")
-stat_card(db, KPI_ROW, *kpi_cols[3], "COMBINED 40'RH BALANCE",
-          "=%sO15" % TR,
-          "=\"pending + all weeks, both depots, \"&%sB%d" % (TR, last_row_bkk), color="C62828")
+# "COMBINED 40'RH BALANCE" card removed 2026-09-30 per user hand-edit - deemed
+# redundant next to the Shortfall Alert and per-depot AV Balance rows below.
 
 # ---- Detail by depot (two card-tables) ----
 # Row structure (stock/pending/booking/AV-balance rows and how many of them)
@@ -708,6 +713,27 @@ db.cell(DET_ROW0, 2, "DETAIL BY DEPOT").font = Font(bold=True, size=11, color="0
 det_depot_cols = {"BKK27": 2, "LCH27": 8}
 det_depot_ref_col = {"BKK27": ("C", "D"), "LCH27": ("I", "J")}
 det_row_range = list(range(4, block_bottom["BKK27"] + 1))  # canonical row sequence, same for both depots
+
+# a blank spacer row follows each AV-Balance row (except the last, whose gap
+# is the existing 2-row gap before Remarks below) - user hand-edit, 2026-09-30,
+# to visually separate each booking/AV-balance week-cycle in the card table,
+# each getting its own border box (the header rows above join the first one)
+det_rr = []
+det_segments = []
+_rr = DET_ROW0 + 3
+_seg_start = DET_ROW0 + 1
+for i, src_r in enumerate(det_row_range):
+    det_rr.append(_rr)
+    is_stock = (src_r == 4)
+    is_av = (not is_stock) and (src_r != pending_row["BKK27"]) and (src_r not in booking_rows["BKK27"])
+    if is_av:
+        det_segments.append((_seg_start, _rr))
+        _seg_start = _rr + 2
+    _rr += 1
+    if is_av and i != len(det_row_range) - 1:
+        _rr += 1
+DET_LAST_ROW = det_rr[-1]
+
 for loc in LOCS:
     c0 = det_depot_cols[loc]
     lbl_col = "B" if loc == "BKK27" else "H"
@@ -718,7 +744,7 @@ for loc in LOCS:
     db.cell(DET_ROW0 + 2, c0 + 2, "40'RH").font = BOLD
     vcol_re, vcol_rh = det_depot_ref_col[loc]
     for i, src_r in enumerate(det_row_range):
-        rr = DET_ROW0 + 3 + i
+        rr = det_rr[i]
         is_stock = (src_r == 4)
         is_av = (not is_stock) and (src_r != pending_row[loc]) and (src_r not in booking_rows[loc])
         lc = db.cell(rr, c0, "=%s%s%d" % (TR, lbl_col, src_r))
@@ -735,10 +761,11 @@ for loc in LOCS:
         elif is_av:
             for cc in range(c0, c0 + 3):
                 db.cell(rr, cc).fill = yellow
-    draw_card_border(db, DET_ROW0 + 1, DET_ROW0 + 2 + len(det_row_range), c0, c0 + 2)
+    for seg_r0, seg_r1 in det_segments:
+        draw_card_border(db, seg_r0, seg_r1, c0, c0 + 2)
 
 # ---- Remarks (AV/DMG) ----
-REM_DB_ROW0 = DET_ROW0 + 3 + len(det_row_range) + 2
+REM_DB_ROW0 = DET_LAST_ROW + 3
 db.cell(REM_DB_ROW0, 2, "REMARKS  (AV = move code IED/IEP/IER, DMG = move code OER)").font = Font(bold=True, size=11, color="0D3B12")
 for loc in LOCS:
     c0 = det_depot_cols[loc]
