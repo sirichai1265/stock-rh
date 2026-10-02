@@ -112,6 +112,13 @@
   td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric: tabular-nums;}
   td.negv{color:var(--neg);}
   .depot-head{font-weight:800; font-size:14px;}
+  .depot-table{font-size:14px;}
+  .depot-table td{padding-block:13px; line-height:1.4;}
+  .depot-table tbody tr:not(.stock):not(.av) td:first-child,
+  .depot-table tbody tr:not(.stock):not(.av) td.lbl{padding-left:24px; color:var(--ink-2);}
+  .depot-table tr.av td{background:var(--surface-2); border-bottom:6px solid var(--surface);}
+  .depot-table tr.stock td{border-bottom:6px solid var(--surface);}
+  .depot-table tbody td.gap{background:transparent; border-bottom-color:transparent;}
   .depot-head.bkk{color:var(--bkk);}
   .depot-head.lch{color:var(--lch);}
 
@@ -177,7 +184,7 @@
   <section class="card">
     <h2>Detail by depot</h2>
     <div class="chart-wrap">
-      <table>
+      <table class="depot-table">
         <thead><tr><th>BKK27 / BC2</th><th class="num">20'RE</th><th class="num">40'RH</th><th style="width:26px"></th><th class="lbl">LCH27 / HAST</th><th class="num">20'RE</th><th class="num">40'RH</th></tr></thead>
         <tbody id="tbody"></tbody>
       </table>
@@ -290,7 +297,7 @@
     const cls = r.stock ? 'stock' : (r.av ? 'av' : '');
     const alwaysShow = r.stock || r.av;
     const cell = (v)=> `<td class="num${v<0?' negv':''}">${(v===0 && !alwaysShow) ? '' : v}</td>`;
-    return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
+    return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td class="gap"></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
   }).join('');
 
   // ---- Remarks: AV (IED/IEP/IER) and DMG (OER) counts, split by depot ----
