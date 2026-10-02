@@ -34,6 +34,7 @@ except ImportError:
 # ตั้งค่า
 # --------------------------------------------------------------------------- #
 FOLDER = Path(__file__).resolve().parent          # โฟลเดอร์ STOCK RH (ที่สคริปต์วางอยู่)
+INPUT_DIR = FOLDER / "INPUT"                      # โฟลเดอร์ไฟล์ต้นฉบับ (.pdf / .xls)
 TODAY = _dt.date.today().strftime("%Y-%m-%d")
 
 TEXT_DUMP = FOLDER / "_extracted_text.txt"
@@ -189,12 +190,12 @@ def years_from_pdf_text(text: str) -> list[int]:
 # main
 # --------------------------------------------------------------------------- #
 def main() -> None:
-    pdf_files = sorted(FOLDER.glob("*.pdf"))
-    xl_files = sorted(p for p in FOLDER.glob("*")
+    pdf_files = sorted(INPUT_DIR.glob("*.pdf"))
+    xl_files = sorted(p for p in INPUT_DIR.glob("*")
                       if p.suffix.lower() in {".xls", ".xlsx", ".xlsm", ".csv", ".tsv"}
                       and not p.name.startswith("REEFER_SUMMARY"))
 
-    print(f"โฟลเดอร์      : {FOLDER}")
+    print(f"โฟลเดอร์      : {INPUT_DIR}")
     print(f"PDF ที่พบ     : {[p.name for p in pdf_files]}")
     print(f"Excel/CSV ที่พบ: {[p.name for p in xl_files]}")
 

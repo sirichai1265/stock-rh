@@ -8,7 +8,8 @@ Output: Stock_Daily_<M-D>.xlsx   (Control / BookingRaw / Summary, formula-driven
         Stock_Daily_<M-D>.model.json  (computed model, for verification)
 
 Run:  python build_stock_daily_reefer.py "9-10-STAYING - Copy.xls" "9-10-BKG+PD - Copy.xls"
-(defaults to those two files in the script folder if no args given)
+      (relative paths are resolved inside the INPUT folder)
+(defaults to those two files in the INPUT folder if no args given)
 
 Recalc of the .xlsx and PNG export of the .pptx are done by companion
 PowerShell scripts that drive Excel / PowerPoint COM.
@@ -29,6 +30,7 @@ from openpyxl.utils import get_column_letter
 # config
 # --------------------------------------------------------------------------- #
 FOLDER = Path(__file__).resolve().parent
+INPUT_DIR = FOLDER / "INPUT"                      # raw source files (.xls)
 
 # raw code -> display type   (same mapping for stock Size/Type and booking columns)
 BKG_TYPE_ORDER = ["GP22", "GP42", "GP45", "RE22", "RE45", "UT22", "UT42", "PC22", "PC42"]
@@ -404,12 +406,12 @@ def build_excel(model, stock_agg, bkg: pd.DataFrame, out: Path):
 # --------------------------------------------------------------------------- #
 def main():
     args = sys.argv[1:]
-    stock_path = Path(args[0]) if len(args) > 0 else FOLDER / "9-10-STAYING - Copy.xls"
-    bkg_path = Path(args[1]) if len(args) > 1 else FOLDER / "9-10-BKG+PD - Copy.xls"
+    stock_path = Path(args[0]) if len(args) > 0 else INPUT_DIR / "9-10-STAYING - Copy.xls"
+    bkg_path = Path(args[1]) if len(args) > 1 else INPUT_DIR / "9-10-BKG+PD - Copy.xls"
     if not stock_path.is_absolute():
-        stock_path = FOLDER / stock_path
+        stock_path = INPUT_DIR / stock_path
     if not bkg_path.is_absolute():
-        bkg_path = FOLDER / bkg_path
+        bkg_path = INPUT_DIR / bkg_path
 
     today = dt.date.today()
     tag = f"{today.month}-{today.day}"
