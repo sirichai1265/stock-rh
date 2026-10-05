@@ -655,6 +655,11 @@ for _row in sm.iter_rows(min_row=1, max_row=sm.max_row, min_col=1, max_col=sm.ma
         if _cell.value is not None or _cell.fill.fill_type is not None:
             _cell.border = BORDER
 
+# user spec 2026-10-05: columns B-Q uniformly 61 pixels wide (Calibri 11: px = 7*w + 5 -> w = 8.0),
+# overriding the earlier per-section widths set above (label col 20, value cols 8, mini table 9, ...)
+for _cc in range(2, 18):
+    sm.column_dimensions[col_letter(_cc)].width = 8.0
+
 sm.freeze_panes = "B4"
 
 # ==================== Dashboard sheet (KPI-card style) ====================
