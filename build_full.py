@@ -12,12 +12,12 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-2-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-2-BKG-3WK-RH.xls"
-PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-2-PENDING-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-2.xlsx"
-REPORT_DATE = _dt.date(2026, 10, 2)
-MERGE_END_DATE = _dt.date(2026, 10, 24)  # RULE 2's last displayed week (wk+3) ends 24 Oct; no stray data beyond it this run (max booking date is 17 Oct)
+STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-5-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-5-BKG-3WK-RH.xls"
+PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-5-PENDING-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-5.xlsx"
+REPORT_DATE = _dt.date(2026, 10, 5)
+MERGE_END_DATE = _dt.date(2026, 10, 24)  # last displayed week (wk+2) ends 24 Oct; max booking date this run is also 24 Oct, no stray data to fold in
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
 DEPOT_TITLE = {"BKK27": "BKK / BC2 (BKK27)", "LCH27": "LCH / HAST (LCH27)"}
