@@ -8,6 +8,7 @@ for BKK27 (BC2) and LCH27 (HAST) only - all on ONE sheet ('TOTAL RH'):
 """
 import datetime as _dt
 import openpyxl
+from openpyxl.worksheet.properties import PageSetupProperties
 import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
@@ -522,6 +523,12 @@ for loc, title in DEPOT_TITLE.items():
     sm.cell(r, base + 2, "OVER 5 Y").alignment = Alignment(horizontal="right")
     DUR_BOTTOM = r
 
+# ---------------- second sheet "YEAR BUILT": CARGO classification + full Year x Brand x
+# Size matrix (user spec 2026-10-08: split out of TOTAL RH into its own sheet) ----------------
+sy = wb.create_sheet("YEAR BUILT")
+sy.sheet_view.showGridLines = False
+TY = "'YEAR BUILT'!"  # sheet-qualified prefix for refs into it
+
 # ---------------- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN
 # (built <=2020), 40'RH stock, split by depot per user spec - placed right after
 # the durian mini table, before the full Year x Brand x Size matrix below (user
@@ -529,8 +536,8 @@ for loc, title in DEPOT_TITLE.items():
 N_COLS = 1 + len(BRANDS) * len(SIZES)
 YBS_COL0 = {"BKK27": 2, "LCH27": 2 + N_COLS + 1}  # deterministic column layout (col0, last_col=col0+N_COLS-1, next col0=last_col+2), independent of row order
 
-CARGO_ROW0 = DUR_BOTTOM + 3
-sm.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (40'RH stock by Built Year, per depot)").font = Font(bold=True, italic=True)
+CARGO_ROW0 = 1  # top of the second sheet
+sy.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (40'RH stock by Built Year, per depot)").font = Font(bold=True, italic=True)
 
 DEPOT_COLOR = {"BKK27": "2A78D6", "LCH27": "EB6834"}
 
@@ -554,10 +561,10 @@ def _cargo_formula_loc(loc, y_lo, y_hi):
 cargo_cols = [(2, 4), (6, 8), (10, 12), (14, 16)]
 _ci = 0
 for loc in LOCS:
-    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s DURIAN  (2021-2026)" % loc,
+    stat_card(sy, cargo_row, *cargo_cols[_ci], "%s DURIAN  (2021-2026)" % loc,
               _cargo_formula_loc(loc, 2021, 2026), "40'RH stock", color=DEPOT_COLOR[loc])
     _ci += 1
-    stat_card(sm, cargo_row, *cargo_cols[_ci], "%s NON DURIAN  (≤ 2020)" % loc,
+    stat_card(sy, cargo_row, *cargo_cols[_ci], "%s NON DURIAN  (≤ 2020)" % loc,
               _cargo_formula_loc(loc, 2010, 2020), "40'RH stock", color=DEPOT_COLOR[loc])
     _ci += 1
 
@@ -595,85 +602,80 @@ for loc, label in LOCS.items():
     last_col = col0 + N_COLS - 1
     YBS_COL0[loc] = col0
 
-    sm.merge_cells(start_row=YBS_ROW0, start_column=col0, end_row=YBS_ROW0, end_column=last_col)
-    t = sm.cell(YBS_ROW0, col0, "%s  \u2014  Stock by Built Year x Brand x Size" % label)
+    sy.merge_cells(start_row=YBS_ROW0, start_column=col0, end_row=YBS_ROW0, end_column=last_col)
+    t = sy.cell(YBS_ROW0, col0, "%s  \u2014  Stock by Built Year x Brand x Size" % label)
     t.fill = TITLE_FILL; t.font = WHITE; t.alignment = ctr
 
     hr = YBS_ROW0 + 1
     YBS_HR[loc] = hr
-    sm.merge_cells(start_row=hr, start_column=col0, end_row=hr + 1, end_column=col0)
-    c0 = sm.cell(hr, col0, "YEAR\nBUILT")
+    sy.merge_cells(start_row=hr, start_column=col0, end_row=hr + 1, end_column=col0)
+    c0 = sy.cell(hr, col0, "YEAR\nBUILT")
     c0.fill = HEAD_FILL; c0.font = WHITE; c0.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
     c = col0 + 1
     for b in BRANDS:
-        sm.merge_cells(start_row=hr, start_column=c, end_row=hr, end_column=c + 1)
-        hc = sm.cell(hr, c, b)
+        sy.merge_cells(start_row=hr, start_column=c, end_row=hr, end_column=c + 1)
+        hc = sy.cell(hr, c, b)
         hc.fill = HEAD_FILL; hc.font = WHITE; hc.alignment = ctr
-        sm.cell(hr, c + 1).fill = HEAD_FILL
+        sy.cell(hr, c + 1).fill = HEAD_FILL
         for j, sz in enumerate(("20'RE", "40'RH")):
-            sc = sm.cell(hr + 1, c + j, sz)
+            sc = sy.cell(hr + 1, c + j, sz)
             sc.fill = SUBHEAD_FILL; sc.font = WHITE; sc.alignment = ctr
         c += 2
 
     r = hr + 2
     for i, row in enumerate(year_tables[loc]):
         is_total = row["Year"] == "GTTL"
-        yc = sm.cell(r, col0, row["Year"]); yc.alignment = ctr
+        yc = sy.cell(r, col0, row["Year"]); yc.alignment = ctr
         yc.font = BOLD if is_total else Font()
         c = col0 + 1
         for b in BRANDS:
             for sz in SIZES:
                 v = row[(b, sz)]
-                cell = sm.cell(r, c, v if v else None)
+                cell = sy.cell(r, c, v if v else None)
                 cell.alignment = ctr
                 if is_total:
                     cell.font = BOLD
                 c += 1
         fill = GTTL_FILL if is_total else year_band_fill(row["Year"])
         for cc in range(col0, last_col + 1):
-            cell = sm.cell(r, cc)
+            cell = sy.cell(r, cc)
             cell.border = BORDER
             if fill:
                 cell.fill = fill
         r += 1
 
-    _cur = sm.column_dimensions[col_letter(col0)].width
+    _cur = sy.column_dimensions[col_letter(col0)].width
     if not _cur or _cur < 9:
-        sm.column_dimensions[col_letter(col0)].width = 9
+        sy.column_dimensions[col_letter(col0)].width = 9
     for cc in range(col0 + 1, last_col + 1):
-        sm.column_dimensions[col_letter(cc)].width = 8
-    sm.row_dimensions[hr].height = 26
+        sy.column_dimensions[col_letter(cc)].width = 8
+    sy.row_dimensions[hr].height = 26
 
     col0 = last_col + 2
 
-# ---------------- grid lines: thin border on every populated/filled cell ----------------
+# ---------------- grid lines, widths, print setup - both TOTAL RH and YEAR BUILT ----------------
 # Native gridlines are off (showGridLines=False), so give every section its own
 # ruled table instead of leaving blank-gap rows/columns bordered too.
-for _row in sm.iter_rows(min_row=1, max_row=sm.max_row, min_col=1, max_col=sm.max_column):
-    for _cell in _row:
-        if _cell.value is not None or _cell.fill.fill_type is not None:
-            _cell.border = BORDER
-
-# user spec 2026-10-05: columns B-Q uniformly 61 pixels wide (Calibri 11: px = 7*w + 5 -> w = 8.0),
-# overriding the earlier per-section widths set above (label col 20, value cols 8, mini table 9, ...)
-for _cc in range(2, 18):
-    sm.column_dimensions[col_letter(_cc)].width = 8.0
-
-# print layout, user spec 2026-10-08: TOTAL RH prints as 2 landscape pages -
-# page 1 = weekly blocks + roll-up + remarks + durian 5-year tables, page 2 =
-# CARGO CLASSIFICATION + full Year x Brand x Size matrix. Fixed 100% scale (not
-# fit-to-page, which makes Excel ignore the manual break); width is ~9.4" so
-# it fits A4 landscape with narrow margins.
-from openpyxl.worksheet.pagebreak import Break
-sm.print_area = "A1:Q%d" % sm.max_row
-sm.page_setup.orientation = "landscape"
-sm.page_setup.paperSize = sm.PAPERSIZE_A4
-sm.page_setup.scale = 100
-sm.page_margins.left = sm.page_margins.right = 0.4
-sm.page_margins.top = sm.page_margins.bottom = 0.5
-sm.print_options.horizontalCentered = True
-sm.row_breaks.append(Break(id=CARGO_ROW0 - 1))
+for _ws in (sm, sy):
+    for _row in _ws.iter_rows(min_row=1, max_row=_ws.max_row, min_col=1, max_col=_ws.max_column):
+        for _cell in _row:
+            if _cell.value is not None or _cell.fill.fill_type is not None:
+                _cell.border = BORDER
+    # user spec 2026-10-05: columns B-Q uniformly 61 pixels wide (Calibri 11: px = 7*w + 5 -> w = 8.0)
+    for _cc in range(2, 18):
+        _ws.column_dimensions[col_letter(_cc)].width = 8.0
+    _ws.column_dimensions["A"].width = 4
+    # one landscape A4 page per sheet
+    _ws.print_area = "A1:Q%d" % _ws.max_row
+    _ws.page_setup.orientation = "landscape"
+    _ws.page_setup.paperSize = _ws.PAPERSIZE_A4
+    _ws.page_setup.fitToWidth = 1
+    _ws.page_setup.fitToHeight = 1
+    _ws.sheet_properties.pageSetUpPr = PageSetupProperties(fitToPage=True)
+    _ws.page_margins.left = _ws.page_margins.right = 0.4
+    _ws.page_margins.top = _ws.page_margins.bottom = 0.5
+    _ws.print_options.horizontalCentered = True
 
 sm.freeze_panes = "B4"
 
@@ -814,7 +816,7 @@ def _sum2026_2020_45re(loc):
     ycol = YBS_COL0[loc]
     r0, r1 = YBS_HR[loc] + 2, YBS_HR[loc] + 8
     cols_45re = [col_letter(ycol + 2 + 2 * i) for i in range(len(BRANDS))]  # Carrier/Daikin/Thermo 45RE cols
-    terms = ["SUM(%s%s%d:%s%d)" % (TR, c, r0, c, r1) for c in cols_45re]
+    terms = ["SUM(%s%s%d:%s%d)" % (TY, c, r0, c, r1) for c in cols_45re]
     return "=" + "+".join(terms)
 
 
@@ -832,10 +834,10 @@ _cargo_value_row = CARGO_ROW0 + 2
 for _i, loc in enumerate(LOCS):
     _col0, _col1 = cargo_cols[2 * _i]
     stat_card(db, cargo_kpi_row, _col0, _col1, "%s DURIAN  (2021-2026)" % loc,
-              "=%s%s%d" % (TR, col_letter(_col0), _cargo_value_row), "40'RH stock", color=DEPOT_COLOR[loc])
+              "=%s%s%d" % (TY, col_letter(_col0), _cargo_value_row), "40'RH stock", color=DEPOT_COLOR[loc])
     _col0, _col1 = cargo_cols[2 * _i + 1]
     stat_card(db, cargo_kpi_row, _col0, _col1, "%s NON DURIAN  (≤ 2020)" % loc,
-              "=%s%s%d" % (TR, col_letter(_col0), _cargo_value_row), "40'RH stock", color=DEPOT_COLOR[loc])
+              "=%s%s%d" % (TY, col_letter(_col0), _cargo_value_row), "40'RH stock", color=DEPOT_COLOR[loc])
 
 # current brand mix (GTTL row), one compact table per depot
 MIX_ROW0 = cargo_kpi_row + 4
@@ -853,11 +855,11 @@ for loc in LOCS:
         db.cell(rr, c0, b)
         cre = col_letter(ycol + 1 + 2 * i)
         crh = col_letter(ycol + 2 + 2 * i)
-        db.cell(rr, c0 + 1, "=%s%s%d" % (TR, cre, grow)).alignment = ctr
-        db.cell(rr, c0 + 2, "=%s%s%d" % (TR, crh, grow)).alignment = ctr
+        db.cell(rr, c0 + 1, "=%s%s%d" % (TY, cre, grow)).alignment = ctr
+        db.cell(rr, c0 + 2, "=%s%s%d" % (TY, crh, grow)).alignment = ctr
     draw_card_border(db, MIX_ROW0, MIX_ROW0 + 1 + len(BRANDS), c0, c0 + 2)
 db.cell(MIX_ROW0 + 2 + len(BRANDS) + 1, 2,
-        "Full 2010-2026 Year x Brand x Size breakdown is on the TOTAL RH sheet.").font = DB_LIGHT
+        "Full 2010-2026 Year x Brand x Size breakdown is on the YEAR BUILT sheet.").font = DB_LIGHT
 
 db.column_dimensions["A"].width = 3
 for loc in LOCS:
