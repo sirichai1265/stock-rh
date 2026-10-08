@@ -662,10 +662,16 @@ for _ws in (sm, sy):
         for _cell in _row:
             if _cell.value is not None or _cell.fill.fill_type is not None:
                 _cell.border = BORDER
-    # user spec 2026-10-05: columns B-Q uniformly 61 pixels wide (Calibri 11: px = 7*w + 5 -> w = 8.0)
+    # user spec 2026-10-05: columns B-Q uniformly 61 pixels wide. The stored width attribute is
+    # pixels/7 for Calibri 11 (Excel's UI "width" is that minus 5/7, so UI 8.00 = 61 px); an
+    # earlier version wrongly stored 8.0, which is only 56 px
     for _cc in range(2, 18):
-        _ws.column_dimensions[col_letter(_cc)].width = 8.0
+        _ws.column_dimensions[col_letter(_cc)].width = 61 / 7.0
     _ws.column_dimensions["A"].width = 4
+# user spec 2026-10-08: on TOTAL RH the two label columns (B, H) are 165 px wide
+sm.column_dimensions["B"].width = 165 / 7.0
+sm.column_dimensions["H"].width = 165 / 7.0
+for _ws in (sm, sy):
     # one landscape A4 page per sheet
     _ws.print_area = "A1:Q%d" % _ws.max_row
     _ws.page_setup.orientation = "landscape"
