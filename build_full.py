@@ -660,6 +660,21 @@ for _row in sm.iter_rows(min_row=1, max_row=sm.max_row, min_col=1, max_col=sm.ma
 for _cc in range(2, 18):
     sm.column_dimensions[col_letter(_cc)].width = 8.0
 
+# print layout, user spec 2026-10-08: TOTAL RH prints as 2 landscape pages -
+# page 1 = weekly blocks + roll-up + remarks + durian 5-year tables, page 2 =
+# CARGO CLASSIFICATION + full Year x Brand x Size matrix. Fixed 100% scale (not
+# fit-to-page, which makes Excel ignore the manual break); width is ~9.4" so
+# it fits A4 landscape with narrow margins.
+from openpyxl.worksheet.pagebreak import Break
+sm.print_area = "A1:Q%d" % sm.max_row
+sm.page_setup.orientation = "landscape"
+sm.page_setup.paperSize = sm.PAPERSIZE_A4
+sm.page_setup.scale = 100
+sm.page_margins.left = sm.page_margins.right = 0.4
+sm.page_margins.top = sm.page_margins.bottom = 0.5
+sm.print_options.horizontalCentered = True
+sm.row_breaks.append(Break(id=CARGO_ROW0 - 1))
+
 sm.freeze_panes = "B4"
 
 # ==================== Dashboard sheet (KPI-card style) ====================
