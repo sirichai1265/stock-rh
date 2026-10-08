@@ -266,6 +266,20 @@ sm.sheet_view.showGridLines = False
 N = len(TYPES)
 START_COL = {"BKK27": 2, "LCH27": 8}  # label col B.., H.. ; WK col sits one to the left
 
+# Row layout, per user's 10-8 hand-edit: one blank row inserted under the title banner (row 2),
+# and a blank spacer row after every AV-Balance row except the last in the weekly blocks.
+# The weekly-block code below still counts "logical" rows (stock = 4, pending = 5, ...);
+# wrow() maps a logical row to the physical sheet row.
+AV_LOGICAL = [8, 10, 12] if RULE == 1 else [7, 9, 11, 13]
+
+
+def wrow(k):
+    return k + 1 + sum(1 for a in AV_LOGICAL[:-1] if a < k)
+
+
+SPACER_ROWS = [wrow(a) + 1 for a in AV_LOGICAL[:-1]]
+sm.row_dimensions[1].height = 20.1
+
 sm["A1"] = ('="Stock vs Booking Report - Reefer (20\'RE / 40\'RH)  as of "&DAY(Control!$B$1)&" "'
             '&' + mon("Control!$B$1") + '&" "&YEAR(Control!$B$1)')
 _last_col = max(START_COL.values()) + N + 1
@@ -279,46 +293,46 @@ last_av_row = {}
 for loc, label in LOCS.items():
     base = START_COL[loc]
     wk_col_idx = base - 1
-    sm.cell(2, base, label)
-    sm.merge_cells(start_row=2, start_column=base, end_row=2, end_column=base + N)
+    sm.cell(3, base, label)
+    sm.merge_cells(start_row=3, start_column=base, end_row=3, end_column=base + N)
     for i, (disp, _, _) in enumerate(TYPES):
-        sm.cell(3, base + 1 + i, disp)
-    sm.cell(3, wk_col_idx, "WK")
+        sm.cell(4, base + 1 + i, disp)
+    sm.cell(4, wk_col_idx, "WK")
 
     r = 4
-    sm.cell(r, base, "Stock empty in yard")
+    sm.cell(wrow(r), base, "Stock empty in yard")
     for i, (_, scode, _) in enumerate(TYPES):
-        sm.cell(r, base + 1 + i, stock[loc][scode])
+        sm.cell(wrow(r), base + 1 + i, stock[loc][scode])
 
     r = 5
-    sm.cell(r, wk_col_idx, "=Control!$A$4")
-    sm.cell(r, base, "Booking Pending pick up")
+    sm.cell(wrow(r), wk_col_idx, "=Control!$A$4")
+    sm.cell(wrow(r), base, "Booking Pending pick up")
     for i, colL in enumerate(type_cols):
-        sm.cell(r, base + 1 + i, sif(colL, loc, dc("<", "Control!$B$1")))
-    pending_row[loc] = r
+        sm.cell(wrow(r), base + 1 + i, sif(colL, loc, dc("<", "Control!$B$1")))
+    pending_row[loc] = wrow(r)
     bkrows = []
     stock_row = 4
 
     if RULE == 1:
         r = 6  # Count1 = today only
-        sm.cell(r, wk_col_idx, "=Control!$A$4")
-        sm.cell(r, base, today_label())
+        sm.cell(wrow(r), wk_col_idx, "=Control!$A$4")
+        sm.cell(wrow(r), base, today_label())
         for i, colL in enumerate(type_cols):
-            sm.cell(r, base + 1 + i, sif(colL, loc, dc("=", "Control!$B$1")))
-        bkrows.append(r)
+            sm.cell(wrow(r), base + 1 + i, sif(colL, loc, dc("=", "Control!$B$1")))
+        bkrows.append(wrow(r))
 
         r = 7  # Count2 = tomorrow .. Sat wk1
-        sm.cell(r, wk_col_idx, "=Control!$A$4")
-        sm.cell(r, base, rng_label("Control!$B$9", "Control!$C$4"))
+        sm.cell(wrow(r), wk_col_idx, "=Control!$A$4")
+        sm.cell(wrow(r), base, rng_label("Control!$B$9", "Control!$C$4"))
         for i, colL in enumerate(type_cols):
-            sm.cell(r, base + 1 + i, sif(colL, loc, dc(">=", "Control!$B$9") + "," + dc("<=", "Control!$C$4")))
-        bkrows.append(r)
+            sm.cell(wrow(r), base + 1 + i, sif(colL, loc, dc(">=", "Control!$B$9") + "," + dc("<=", "Control!$C$4")))
+        bkrows.append(wrow(r))
 
         r = 8  # AV till Sat wk1
-        sm.cell(r, base, av_label("Control!$C$4"))
+        sm.cell(wrow(r), base, av_label("Control!$C$4"))
         for i in range(N):
             cL = col_letter(base + 1 + i)
-            sm.cell(r, base + 1 + i, "=%s%d-%s%d-%s%d-%s%d" % (cL, stock_row, cL, pending_row[loc], cL, 6, cL, 7))
+            sm.cell(wrow(r), base + 1 + i, "=%s%d-%s%d-%s%d-%s%d" % (cL, wrow(stock_row), cL, wrow(5), cL, wrow(6), cL, wrow(7)))
         av_prev = r
 
         merge_date_formula = "DATE(%d,%d,%d)" % (MERGE_END_DATE.year, MERGE_END_DATE.month, MERGE_END_DATE.day)
@@ -331,33 +345,33 @@ for loc, label in LOCS.items():
         ]
         r = 9
         for mon_ref, sat_label_ref, wk_ref, sat_value_ref in fwd_ctrl:
-            sm.cell(r, wk_col_idx, "=%s" % wk_ref)
-            sm.cell(r, base, rng_label(mon_ref, sat_label_ref))
+            sm.cell(wrow(r), wk_col_idx, "=%s" % wk_ref)
+            sm.cell(wrow(r), base, rng_label(mon_ref, sat_label_ref))
             for i, colL in enumerate(type_cols):
-                sm.cell(r, base + 1 + i, sif(colL, loc, dc(">=", mon_ref) + "," + dc("<=", sat_value_ref)))
-            bkrows.append(r)
+                sm.cell(wrow(r), base + 1 + i, sif(colL, loc, dc(">=", mon_ref) + "," + dc("<=", sat_value_ref)))
+            bkrows.append(wrow(r))
             r += 1
-            sm.cell(r, base, av_label(sat_label_ref))
+            sm.cell(wrow(r), base, av_label(sat_label_ref))
             for i in range(N):
                 cL = col_letter(base + 1 + i)
-                sm.cell(r, base + 1 + i, "=%s%d-%s%d" % (cL, av_prev, cL, r - 1))
+                sm.cell(wrow(r), base + 1 + i, "=%s%d-%s%d" % (cL, wrow(av_prev), cL, wrow(r - 1)))
             av_prev = r
             r += 1
         bottom = av_prev
 
     else:  # RULE == 2
         r = 6  # Count1 = today..Sat wk1 merged
-        sm.cell(r, wk_col_idx, "=Control!$A$4")
-        sm.cell(r, base, rng_label("Control!$B$1", "Control!$C$4"))
+        sm.cell(wrow(r), wk_col_idx, "=Control!$A$4")
+        sm.cell(wrow(r), base, rng_label("Control!$B$1", "Control!$C$4"))
         for i, colL in enumerate(type_cols):
-            sm.cell(r, base + 1 + i, sif(colL, loc, dc(">=", "Control!$B$1") + "," + dc("<=", "Control!$C$4")))
-        bkrows.append(r)
+            sm.cell(wrow(r), base + 1 + i, sif(colL, loc, dc(">=", "Control!$B$1") + "," + dc("<=", "Control!$C$4")))
+        bkrows.append(wrow(r))
 
         r = 7  # AV till Sat wk1
-        sm.cell(r, base, av_label("Control!$C$4"))
+        sm.cell(wrow(r), base, av_label("Control!$C$4"))
         for i in range(N):
             cL = col_letter(base + 1 + i)
-            sm.cell(r, base + 1 + i, "=%s%d-%s%d-%s%d" % (cL, stock_row, cL, pending_row[loc], cL, 6))
+            sm.cell(wrow(r), base + 1 + i, "=%s%d-%s%d-%s%d" % (cL, wrow(stock_row), cL, wrow(5), cL, wrow(6)))
         av_prev = r
 
         fwd_ctrl = [("Control!$B5", "Control!$C5", "Control!$A$5"),
@@ -365,28 +379,28 @@ for loc, label in LOCS.items():
                     ("Control!$B7", "Control!$C7", "Control!$A$7")]
         r = 8
         for mon_ref, sat_ref, wk_ref in fwd_ctrl:
-            sm.cell(r, wk_col_idx, "=%s" % wk_ref)
-            sm.cell(r, base, rng_label(mon_ref, sat_ref))
+            sm.cell(wrow(r), wk_col_idx, "=%s" % wk_ref)
+            sm.cell(wrow(r), base, rng_label(mon_ref, sat_ref))
             for i, colL in enumerate(type_cols):
-                sm.cell(r, base + 1 + i, sif(colL, loc, dc(">=", mon_ref) + "," + dc("<=", sat_ref)))
-            bkrows.append(r)
+                sm.cell(wrow(r), base + 1 + i, sif(colL, loc, dc(">=", mon_ref) + "," + dc("<=", sat_ref)))
+            bkrows.append(wrow(r))
             r += 1
-            sm.cell(r, base, av_label(sat_ref))
+            sm.cell(wrow(r), base, av_label(sat_ref))
             for i in range(N):
                 cL = col_letter(base + 1 + i)
-                sm.cell(r, base + 1 + i, "=%s%d-%s%d" % (cL, av_prev, cL, r - 1))
+                sm.cell(wrow(r), base + 1 + i, "=%s%d-%s%d" % (cL, wrow(av_prev), cL, wrow(r - 1)))
             av_prev = r
             r += 1
         bottom = av_prev
 
     booking_rows[loc] = bkrows
-    last_av_row[loc] = av_prev
-    block_bottom[loc] = bottom
+    last_av_row[loc] = wrow(av_prev)
+    block_bottom[loc] = wrow(bottom)
 
     sm.column_dimensions[col_letter(base)].width = 20   # label column
     for i in range(1, N + 1):
         sm.column_dimensions[col_letter(base + i)].width = 8  # value columns
-    sm.column_dimensions[col_letter(wk_col_idx)].width = 4
+    sm.column_dimensions[col_letter(wk_col_idx)].width = 32 / 7.0
 
 BLOCK_BOTTOM = max(block_bottom.values())
 
@@ -405,16 +419,15 @@ sm["A1"].fill = banner; sm["A1"].font = WHITE; sm["A1"].alignment = ctr
 for loc, label in LOCS.items():
     base = START_COL[loc]
     wk_col_idx = base - 1
-    cell = sm.cell(2, base); cell.fill = green; cell.font = WHITE; cell.alignment = ctr
+    cell = sm.cell(3, base); cell.fill = green; cell.font = WHITE; cell.alignment = ctr
     for c in range(base, base + N + 1):
-        cell = sm.cell(3, c); cell.fill = green; cell.font = WHITE; cell.alignment = ctr
-    sm.cell(3, wk_col_idx).fill = green; sm.cell(3, wk_col_idx).font = WHITE; sm.cell(3, wk_col_idx).alignment = ctr
+        cell = sm.cell(4, c); cell.fill = green; cell.font = WHITE; cell.alignment = ctr
+    sm.cell(4, wk_col_idx).fill = green; sm.cell(4, wk_col_idx).font = WHITE; sm.cell(4, wk_col_idx).alignment = ctr
     for c in range(base, base + N + 1):
-        cell = sm.cell(4, c); cell.fill = grey; cell.font = BOLD; cell.alignment = ctr if c > base else lft
+        cell = sm.cell(wrow(4), c); cell.fill = grey; cell.font = BOLD; cell.alignment = ctr if c > base else lft
     # AV-Balance rows are every row from Count/Week's AV onward - identify them as
     # "the row after each booking row" among this block's rows
-    av_rows_this_block = sorted(set(range(4, block_bottom[loc] + 1)) - set(booking_rows[loc])
-                                 - {4, pending_row[loc]})
+    av_rows_this_block = [wrow(a) for a in AV_LOGICAL]
     for rr in av_rows_this_block:
         for c in range(base, base + N + 1):
             cell = sm.cell(rr, c); cell.fill = yellow; cell.font = BOLD; cell.alignment = ctr if c > base else lft
@@ -422,14 +435,13 @@ for loc, label in LOCS.items():
 wb.calculation.fullCalcOnLoad = True
 
 # ---------------- Remarks: AV (move code IED/IEP/IER) and DMG (move code OER) ----------------
-REM_ROW0 = BLOCK_BOTTOM + 2
-sm.cell(REM_ROW0, 1, "Remarks:").font = Font(bold=True, italic=True)
-sm.cell(REM_ROW0, 1).alignment = Alignment(horizontal="left")
-note = sm.cell(REM_ROW0, 2, "AV = stock with move code IED / IEP / IER (available)   |   DMG = move code OER (damaged)")
-note.font = Font(italic=True, size=9)
-REM_HDR = REM_ROW0 + 1
+# (the "Remarks: AV = ... DMG = ..." legend row was dropped from TOTAL RH in the user's 10-8 edit;
+# the legend still appears on the Dashboard sheet)
+REM_HDR = BLOCK_BOTTOM + 3
 for loc, label in LOCS.items():
     base = START_COL[loc]
+    h = sm.cell(REM_HDR, base, label)
+    h.fill = green; h.font = WHITE; h.alignment = ctr
     for i, (disp, scode, _) in enumerate(TYPES):
         c = sm.cell(REM_HDR, base + 1 + i, disp)
         c.font = BOLD; c.alignment = ctr
@@ -445,7 +457,8 @@ REM_BOTTOM = REM_HDR + 2
 MINI_COL = max(START_COL.values()) + N + 3  # a couple columns after the LCH27 block
 DEPOT_ROWLABEL = {"BKK27": "BC", "LCH27": "HAST"}
 mini_titles = [("STOCK", 4), ("BOOKING", None), ("BALANCE", None)]
-r0 = 2
+r0 = 3
+MINI_TOTAL_ROWS = []
 for title, _ in mini_titles:
     sm.cell(r0, MINI_COL, title).font = BOLD
     sm.cell(r0, MINI_COL).fill = grey
@@ -457,8 +470,8 @@ for title, _ in mini_titles:
         base = START_COL[loc]
         re_col, rh_col = col_letter(base + 1), col_letter(base + 2)
         if title == "STOCK":
-            sm.cell(r0, MINI_COL + 1, "=%s4" % re_col)
-            sm.cell(r0, MINI_COL + 2, "=%s4" % rh_col)
+            sm.cell(r0, MINI_COL + 1, "=%s%d" % (re_col, wrow(4)))
+            sm.cell(r0, MINI_COL + 2, "=%s%d" % (rh_col, wrow(4)))
         elif title == "BOOKING":
             book_terms_re = "+".join("%s%d" % (re_col, rr) for rr in [pending_row[loc]] + booking_rows[loc])
             book_terms_rh = "+".join("%s%d" % (rh_col, rr) for rr in [pending_row[loc]] + booking_rows[loc])
@@ -472,6 +485,7 @@ for title, _ in mini_titles:
         r0 += 1
     lastloc = list(LOCS)[-1]
     firstrow = r0 - len(LOCS)
+    MINI_TOTAL_ROWS.append(r0)
     sm.cell(r0, MINI_COL, "TOTAL").font = BOLD
     sm.cell(r0, MINI_COL + 1, "=SUM(%s%d:%s%d)" % (col_letter(MINI_COL + 1), firstrow, col_letter(MINI_COL + 1), r0 - 1)).font = BOLD
     sm.cell(r0, MINI_COL + 2, "=SUM(%s%d:%s%d)" % (col_letter(MINI_COL + 2), firstrow, col_letter(MINI_COL + 2), r0 - 1)).font = BOLD
@@ -479,7 +493,7 @@ for title, _ in mini_titles:
     r0 += 2
 
 for cc in (MINI_COL, MINI_COL + 1, MINI_COL + 2):
-    sm.column_dimensions[col_letter(cc)].width = 9
+    sm.column_dimensions[col_letter(cc)].width = 61 / 7.0
 
 # ---------------- "5 years for durian season" mini table (45RE by brand) ----------------
 DUR_ROW0 = REM_BOTTOM + 3
@@ -541,7 +555,8 @@ sy.cell(CARGO_ROW0, 2, "CARGO CLASSIFICATION  (40'RH stock by Built Year, per de
 
 DEPOT_COLOR = {"BKK27": "2A78D6", "LCH27": "EB6834"}
 
-cargo_row = CARGO_ROW0 + 1
+cargo_row = CARGO_ROW0 + 2  # row 2 left blank (user 10-8 edit)
+CARGO_VALUE_ROW = cargo_row + 1
 CARGO_BOTTOM = cargo_row + 2
 YBS_ROW0 = CARGO_BOTTOM + 3
 YBS_HR = {"BKK27": YBS_ROW0 + 1, "LCH27": YBS_ROW0 + 1}  # both depots' matrices share the same header row
@@ -567,6 +582,8 @@ for loc in LOCS:
     stat_card(sy, cargo_row, *cargo_cols[_ci], "%s NON DURIAN  (≤ 2020)" % loc,
               _cargo_formula_loc(loc, 2010, 2020), "40'RH stock", color=DEPOT_COLOR[loc])
     _ci += 1
+for _c0, _c1 in cargo_cols:
+    sy.cell(cargo_row, _c0).font = Font(bold=True, size=9)  # label black, not grey, on this sheet
 
 # ---------------- full Built-Year x Brand x Size stock matrix ----------------
 TITLE_FILL = banner
@@ -655,6 +672,18 @@ for loc, label in LOCS.items():
     col0 = last_col + 2
 
 # ---------------- grid lines, widths, print setup - both TOTAL RH and YEAR BUILT ----------------
+for _r in SPACER_ROWS:
+    for _loc in LOCS:
+        for _c in range(START_COL[_loc], START_COL[_loc] + N + 1):
+            sm.cell(_r, _c).border = BORDER
+# the blank row 2 keeps thin top/bottom lines over the label+value columns, and the WK
+# columns (A, G) are left-aligned - both as in the user's 10-8 edit
+for _loc in LOCS:
+    for _c in range(START_COL[_loc], START_COL[_loc] + N + 1):
+        sm.cell(2, _c).border = Border(top=thin, bottom=thin)
+for _r in range(4, BLOCK_BOTTOM + 1):
+    for _c in (1, 7):
+        sm.cell(_r, _c).alignment = lft
 # Native gridlines are off (showGridLines=False), so give every section its own
 # ruled table instead of leaving blank-gap rows/columns bordered too.
 for _ws in (sm, sy):
@@ -667,7 +696,11 @@ for _ws in (sm, sy):
     # earlier version wrongly stored 8.0, which is only 56 px
     for _cc in range(2, 18):
         _ws.column_dimensions[col_letter(_cc)].width = 61 / 7.0
-    _ws.column_dimensions["A"].width = 4
+# narrow gap columns, user's 10-8 edit: TOTAL RH A and G (the WK columns) 32 px, YEAR BUILT A and I 25 px
+sm.column_dimensions["A"].width = 32 / 7.0
+sm.column_dimensions["G"].width = 32 / 7.0
+sy.column_dimensions["A"].width = 25 / 7.0
+sy.column_dimensions["I"].width = 25 / 7.0
 # user spec 2026-10-08: on TOTAL RH the two label columns (B, H) are 165 px wide
 sm.column_dimensions["B"].width = 165 / 7.0
 sm.column_dimensions["H"].width = 165 / 7.0
@@ -725,9 +758,9 @@ stat_card(db, KPI_ROW, *kpi_cols[0], "SHORTFALL ALERT",
           "=MIN(%sD%d,%sJ%d)" % (TR, last_row_bkk, TR, last_row_lch),
           "=\"BKK27/LCH27 40'RH, worse \"&%sB%d" % (TR, last_row_bkk), color="C62828")
 stat_card(db, KPI_ROW, *kpi_cols[1], "COMBINED 40'RH STOCK",
-          "=%sO5" % TR, "BKK27 + LCH27")
+          "=%sO%d" % (TR, MINI_TOTAL_ROWS[0]), "BKK27 + LCH27")
 stat_card(db, KPI_ROW, *kpi_cols[2], "COMBINED 40'RH BOOKING",
-          "=%sO10" % TR, "pending + all weeks")
+          "=%sO%d" % (TR, MINI_TOTAL_ROWS[1]), "pending + all weeks")
 # "COMBINED 40'RH BALANCE" card removed 2026-09-30 per user hand-edit - deemed
 # redundant next to the Shortfall Alert and per-depot AV Balance rows below.
 
@@ -740,7 +773,7 @@ DET_ROW0 = KPI_ROW + 4
 db.cell(DET_ROW0, 2, "DETAIL BY DEPOT").font = Font(bold=True, size=11, color="0D3B12")
 det_depot_cols = {"BKK27": 2, "LCH27": 8}
 det_depot_ref_col = {"BKK27": ("C", "D"), "LCH27": ("I", "J")}
-det_row_range = list(range(4, block_bottom["BKK27"] + 1))  # canonical row sequence, same for both depots
+det_row_range = list(range(4, AV_LOGICAL[-1] + 1))  # canonical row sequence, same for both depots
 
 # a blank spacer row follows each AV-Balance row (except the last, whose gap
 # is the existing 2-row gap before Remarks below) - user hand-edit, 2026-09-30,
@@ -753,7 +786,7 @@ _seg_start = DET_ROW0 + 1
 for i, src_r in enumerate(det_row_range):
     det_rr.append(_rr)
     is_stock = (src_r == 4)
-    is_av = (not is_stock) and (src_r != pending_row["BKK27"]) and (src_r not in booking_rows["BKK27"])
+    is_av = src_r in AV_LOGICAL
     if is_av:
         det_segments.append((_seg_start, _rr))
         _seg_start = _rr + 2
@@ -765,7 +798,7 @@ DET_LAST_ROW = det_rr[-1]
 for loc in LOCS:
     c0 = det_depot_cols[loc]
     lbl_col = "B" if loc == "BKK27" else "H"
-    hdr = db.cell(DET_ROW0 + 1, c0, "=%s%s2" % (TR, lbl_col))
+    hdr = db.cell(DET_ROW0 + 1, c0, "=%s%s3" % (TR, lbl_col))
     db_merge_row(db, DET_ROW0 + 1, c0, c0 + 2)
     hdr.font = Font(bold=True, size=12, color=("2A78D6" if loc == "BKK27" else "EB6834"))
     db.cell(DET_ROW0 + 2, c0 + 1, "20'RE").font = BOLD
@@ -774,11 +807,11 @@ for loc in LOCS:
     for i, src_r in enumerate(det_row_range):
         rr = det_rr[i]
         is_stock = (src_r == 4)
-        is_av = (not is_stock) and (src_r != pending_row[loc]) and (src_r not in booking_rows[loc])
-        lc = db.cell(rr, c0, "=%s%s%d" % (TR, lbl_col, src_r))
+        is_av = src_r in AV_LOGICAL
+        lc = db.cell(rr, c0, "=%s%s%d" % (TR, lbl_col, wrow(src_r)))
         lc.font = BOLD if (is_stock or is_av) else Font()
-        ve = db.cell(rr, c0 + 1, "=%s%s%d" % (TR, vcol_re, src_r))
-        vh = db.cell(rr, c0 + 2, "=%s%s%d" % (TR, vcol_rh, src_r))
+        ve = db.cell(rr, c0 + 1, "=%s%s%d" % (TR, vcol_re, wrow(src_r)))
+        vh = db.cell(rr, c0 + 2, "=%s%s%d" % (TR, vcol_rh, wrow(src_r)))
         for cell in (ve, vh):
             cell.alignment = ctr
             if is_stock or is_av:
@@ -797,7 +830,7 @@ REM_DB_ROW0 = DET_LAST_ROW + 3
 db.cell(REM_DB_ROW0, 2, "REMARKS  (AV = move code IED/IEP/IER, DMG = move code OER)").font = Font(bold=True, size=11, color="0D3B12")
 for loc in LOCS:
     c0 = det_depot_cols[loc]
-    hdr = db.cell(REM_DB_ROW0 + 1, c0, "=%s%s2" % (TR, "B" if loc == "BKK27" else "H"))
+    hdr = db.cell(REM_DB_ROW0 + 1, c0, "=%s%s3" % (TR, "B" if loc == "BKK27" else "H"))
     db_merge_row(db, REM_DB_ROW0 + 1, c0, c0 + 2)
     hdr.font = Font(bold=True, size=11, color=("2A78D6" if loc == "BKK27" else "EB6834"))
     db.cell(REM_DB_ROW0 + 2, c0 + 1, "20'RE").font = BOLD
@@ -836,7 +869,7 @@ stat_card(db, rfs_kpi_row, 10, 12, "PEAK BUILD YEAR", "=\"%s\"" % PEAK_YEAR_LABE
 # ---- CARGO classification: DURIAN (built 2021-2026) vs NON DURIAN (<=2020) ----
 # live-linked to the TOTAL RH sheet's CARGO CLASSIFICATION cards (per depot), not recomputed
 cargo_kpi_row = rfs_kpi_row + 4
-_cargo_value_row = CARGO_ROW0 + 2
+_cargo_value_row = CARGO_VALUE_ROW
 for _i, loc in enumerate(LOCS):
     _col0, _col1 = cargo_cols[2 * _i]
     stat_card(db, cargo_kpi_row, _col0, _col1, "%s DURIAN  (2021-2026)" % loc,

@@ -31,8 +31,7 @@ NORMAL = Font(bold=True)
 # i.e. one column right of a "WK" header col) contains "AV Balance"
 label_cols = []
 for c in range(1, sm.max_column + 1):
-    header = sm.cell(3, c).value
-    if header == "WK":
+    if any(sm.cell(hr_, c).value == "WK" for hr_ in range(2, 6)):  # header row moved to 4 in the 10-8 layout
         label_cols.append(c + 1)  # label sits immediately right of WK col
 
 report = {}
