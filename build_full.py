@@ -13,11 +13,11 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-12-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-12-BKG-3WK-RH.xls"
-PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-12-PENDING-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-12.xlsx"
-REPORT_DATE = _dt.date(2026, 10, 12)
+STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-14-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-14-BKG-3WK-RH.xls"
+PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-14-PENDING-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-14.xlsx"
+REPORT_DATE = _dt.date(2026, 10, 14)
 MERGE_END_DATE = _dt.date(2026, 10, 31)  # last displayed week (wk+2) ends 31 Oct; max booking date this run is 30 Oct, no stray data to fold in
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
