@@ -13,12 +13,12 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-15-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-15-BKG-3WK-RH.xls"
-PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-15-PENDING-RH.xls"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-15.xlsx"
-REPORT_DATE = _dt.date(2026, 10, 15)
-MERGE_END_DATE = _dt.date(2026, 10, 31)  # last displayed week (wk+2) ends 31 Oct; NOTE 10-15 booking export only runs to 24 Oct (a "WK", not 3WK, file) so the 26-31 Oct row is empty
+STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-19-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-19-BKG-3WK-RH.xls"
+PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-17-PENDING-RH.xls"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-19.xlsx"
+REPORT_DATE = _dt.date(2026, 10, 19)
+MERGE_END_DATE = _dt.date(2026, 11, 7)  # last displayed week (wk+2) ends 7 Nov
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
 DEPOT_TITLE = {"BKK27": "BKK / BC2 (BKK27)", "LCH27": "LCH / HAST (LCH27)"}
@@ -44,6 +44,8 @@ def norm_brand(v):
 st = pd.read_excel(STOCK, header=0)
 st.columns = [str(c).strip() for c in st.columns]
 st = st[st["Location"].isin(LOCS) & st["Size/Type"].notna()]
+# user rule (10-19): STAYING does not count Move Codes OEP / OEV / OEW
+st = st[~st["Move Code"].astype(str).str.strip().isin(["OEP", "OEV", "OEW"])]
 
 stock = {loc: {code: int((st[(st["Location"] == loc) & (st["Size/Type"] == code)]).shape[0])
                for _, code, _ in TYPES} for loc in LOCS}
