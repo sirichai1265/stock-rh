@@ -109,6 +109,7 @@
   tbody tr:last-child td{border-bottom:none;}
   tr.stock td{font-weight:700; background:var(--surface-2);}
   tr.av td{font-weight:700;}
+  tr.spacer td{padding:0; height:14px; border-bottom:none; background:transparent;}
   td.num{font-family:"IBM Plex Mono",monospace; font-variant-numeric: tabular-nums;}
   td.negv{color:var(--neg);}
   .depot-head{font-weight:800; font-size:14px;}
@@ -289,7 +290,8 @@
     const cls = r.stock ? 'stock' : (r.av ? 'av' : '');
     const alwaysShow = r.stock || r.av;
     const cell = (v)=> `<td class="num${v<0?' negv':''}">${(v===0 && !alwaysShow) ? '' : v}</td>`;
-    return `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
+    const spacer = r.av ? '<tr class="spacer"><td colspan="7"></td></tr>' : '';
+    return spacer + `<tr class="${cls}"><td>${r.label}</td>${cell(r.bkk[0])}${cell(r.bkk[1])}<td></td><td class="lbl">${r.label}</td>${cell(r.lch[0])}${cell(r.lch[1])}</tr>`;
   }).join('');
 
   // ---- Remarks: AV (IED/IEP/IER) and DMG (OER) counts, split by depot ----
