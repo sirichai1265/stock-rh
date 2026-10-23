@@ -13,11 +13,11 @@ import pandas as pd
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter as col_letter
 
-STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-22-STAYING-RH.xls"
-BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-22-BKG-3WK-RH.xls"
-PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-21-PENDING-RH.xlsx"
-OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-22.xlsx"
-REPORT_DATE = _dt.date(2026, 10, 22)
+STOCK = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-23-STAYING-RH.xls"
+BKG = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-23-BKG-3WK-RH.xls"
+PENDING = r"C:\Users\HAL-USER\Desktop\STOCK RH\input\10-22-PENDING-RH.xlsx"
+OUT = r"C:\Users\HAL-USER\AppData\Local\Temp\claude\C--Users-HAL-USER-Desktop-STOCK-RH\86e51dd9-7ff4-4213-8bd8-252bb8ffc230\scratchpad\Stock_Daily_Reefer_10-23.xlsx"
+REPORT_DATE = _dt.date(2026, 10, 23)
 MERGE_END_DATE = _dt.date(2026, 11, 7)  # last displayed week (wk+2) ends 7 Nov
 
 LOCS = {"BKK27": "BKK27 / BC2", "LCH27": "LCH27 / HAST"}
