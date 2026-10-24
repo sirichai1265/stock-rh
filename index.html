@@ -93,6 +93,8 @@
   .x-label{fill:var(--ink-2); font-size:11.5px; font-weight:600; font-family:"Public Sans",sans-serif;}
   .pt-label{font-size:11px; font-weight:700; font-family:"IBM Plex Mono",monospace;}
 
+  .legend-note{margin:0; font-size:12.5px; color:var(--ink-3);}
+  .legend-note strong{color:var(--ink-2);}
   .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px;}
   .stat{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:4px;}
   .stat .k{font-size:11.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);}
@@ -157,28 +159,7 @@
     </div>
   </header>
 
-  <section class="stats">
-    <div class="stat neg">
-      <div class="k">Shortfall alert</div>
-      <div class="v num">&minus;48</div>
-      <div class="d">BKK27/LCH27 40'RH, worse balance till 7 NOV</div>
-    </div>
-    <div class="stat">
-      <div class="k">Combined 40'RH stock</div>
-      <div class="v num">59</div>
-      <div class="d">BKK27 14 + LCH27 45</div>
-    </div>
-    <div class="stat">
-      <div class="k">Combined 40'RH booking</div>
-      <div class="v num">102</div>
-      <div class="d">pending + all weeks to 7 NOV</div>
-    </div>
-    <div class="stat">
-      <div class="k">Combined 40'RH balance</div>
-      <div class="v num">&minus;43</div>
-      <div class="d">till 7 NOV, both depots</div>
-    </div>
-  </section>
+  <p class="legend-note"><strong>AV</strong> = stock with move code IED / IEP / IER (available) &middot; <strong>DMG</strong> = move code OER (damaged)</p>
 
   <section class="card">
     <h2>Detail by depot</h2>
@@ -188,8 +169,7 @@
         <tbody id="tbody"></tbody>
       </table>
     </div>
-    <p class="note" style="margin:16px 0 8px;"><strong>AV</strong> = stock with move code IED / IEP / IER (available) &middot; <strong>DMG</strong> = move code OER (damaged)</p>
-    <div class="charts-row">
+    <div class="charts-row" style="margin-top:22px;">
       <div class="chart-wrap">
         <table>
           <thead><tr><th class="depot-head bkk" colspan="3" style="text-align:left">BKK27 / BC2 &mdash; Remarks</th></tr>
