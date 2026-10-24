@@ -156,7 +156,7 @@
     <div class="stat neg">
       <div class="k">Shortfall alert</div>
       <div class="v num">&minus;48</div>
-      <div class="d">BKK27/LCH27 40'RH, worse balance till 14 NOV</div>
+      <div class="d">BKK27/LCH27 40'RH, worse balance till 7 NOV</div>
     </div>
     <div class="stat">
       <div class="k">Combined 40'RH stock</div>
@@ -166,12 +166,12 @@
     <div class="stat">
       <div class="k">Combined 40'RH booking</div>
       <div class="v num">102</div>
-      <div class="d">pending + all weeks to 14 NOV</div>
+      <div class="d">pending + all weeks to 7 NOV</div>
     </div>
     <div class="stat">
       <div class="k">Combined 40'RH balance</div>
       <div class="v num">&minus;43</div>
-      <div class="d">till 14 NOV, both depots</div>
+      <div class="d">till 7 NOV, both depots</div>
     </div>
   </section>
 
@@ -273,7 +273,7 @@
     </div>
   </section>
 
-  <footer>Source: 10-23-STAYING-RH.xls + 10-23-BKG-3WK-RH.xls + 10-22-PENDING-RH.xlsx &middot; as of 23 OCT 2026 &middot; STAYING excludes move codes OEP / OEV / OEW &middot; note: the 3WK booking export covers 24 OCT&ndash;8 NOV only, so there is no booking for 23 OCT and the 9&ndash;14 NOV week is empty</footer>
+  <footer>Source: 10-23-STAYING-RH.xls + 10-23-BKG-3WK-RH.xls + 10-22-PENDING-RH.xlsx &middot; as of 23 OCT 2026 &middot; STAYING excludes move codes OEP / OEV / OEW &middot; note: the 3WK booking export covers 24 OCT&ndash;8 NOV only, so there is no booking for 23 OCT</footer>
 
 </div>
 
@@ -288,8 +288,6 @@
     {label:"AV Balance till 31 OCT", bkk:[33,-21], lch:[10,10], av:true},
     {label:"Booking on 2-7 NOV", bkk:[2,27], lch:[0,5]},
     {label:"AV Balance till 7 NOV", bkk:[31,-48], lch:[10,5], av:true},
-    {label:"Booking on 9-14 NOV", bkk:[0,0], lch:[0,0]},
-    {label:"AV Balance till 14 NOV", bkk:[31,-48], lch:[10,5], av:true},
   ];
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = rows.map(r=>{
