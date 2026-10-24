@@ -123,6 +123,11 @@
   .ybs-table tr.band-yellow td{background:var(--band-yellow); color:var(--band-ink);}
   .ybs-table tr.band-brown td{background:var(--band-brown); color:var(--band-ink);}
   .ybs-table tr.band-red td{background:var(--band-red); color:var(--band-ink);}
+  .ybs-table tr.sub td{font-weight:800; color:var(--band-ink); border-top:2px solid rgba(0,0,0,.28);}
+  .ybs-table tr.sub.band-green td{background:#8dbd6f;}
+  .ybs-table tr.sub.band-yellow td{background:#f2d77a;}
+  .ybs-table tr.sub.band-brown td{background:#ad8a66;}
+  .ybs-table tr.sub.band-red td{background:#e98f8f;}
   .ybs-table tr.av td{background:var(--bkk-soft); font-weight:800; border-top:2px solid var(--line);}
 
   .band-rect{fill:var(--surface-2);}
@@ -371,11 +376,22 @@
       const tbody = document.getElementById(tbodyId);
       const z = (v)=> v === 0 ? '' : v;
       const keys = ['cre','crh','dre','drh','tre','trh'];
-      let rows = years.map(y=>{
+      const bandLabel = {'band-green':'2021\u201326', 'band-yellow':'2016\u201320', 'band-brown':'2011\u201315', 'band-red':'2010'};
+      let rows = '';
+      let bandSum = null, bandCls = null;
+      const flushBand = ()=>{
+        if (!bandCls) return;
+        rows += `<tr class="sub ${bandCls}"><td>Total ${bandLabel[bandCls]}</td>${bandSum.map(v=>`<td class="num">${z(v)}</td>`).join('')}</tr>`;
+      };
+      years.forEach(y=>{
+        const cls = bandClass(y);
+        if (cls !== bandCls){ flushBand(); bandCls = cls; bandSum = keys.map(()=>0); }
         const g = data[y];
+        keys.forEach((k,i)=>{ bandSum[i] += g[k]; });
         const cells = keys.map(k => `<td class="num">${z(g[k])}</td>`).join('');
-        return `<tr class="${bandClass(y)}"><td>${y}</td>${cells}</tr>`;
-      }).join('');
+        rows += `<tr class="${cls}"><td>${y}</td>${cells}</tr>`;
+      });
+      flushBand();
       const totals = keys.map(k => years.reduce((s,y)=>s+data[y][k], 0));
       rows += `<tr class="av"><td>GTTL</td>${totals.map(v=>`<td class="num">${v}</td>`).join('')}</tr>`;
       tbody.innerHTML = rows;
