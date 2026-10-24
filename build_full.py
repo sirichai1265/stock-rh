@@ -218,7 +218,7 @@ def today_label():
 #   Mon-Thu ("rule 1"): Count1 = today alone; Count2 = tomorrow..Sat this
 #     week; then 2 forward weeks labelled Week1 (=calendar wk+1), Week2 (=wk+2)
 #   Fri ("rule 2"): Count1 = today..Sat this week merged (no separate "today"
-#     row, since only Fri+Sat remain); then 3 forward weeks Week1/2/3 (=wk+1..+3)
+#     row, since only Fri+Sat remain); then 2 forward weeks Week1/2 (=wk+1..+2) [user 10-24: was 3 weeks]
 # Sat/Sun aren't specified by the user - fall back to rule 2 (merge whatever
 # is left of this week into Count1) as the closer analogue; flagged below.
 # --------------------------------------------------------------------- #
@@ -272,7 +272,7 @@ START_COL = {"BKK27": 2, "LCH27": 8}  # label col B.., H.. ; WK col sits one to 
 # and a blank spacer row after every AV-Balance row except the last in the weekly blocks.
 # The weekly-block code below still counts "logical" rows (stock = 4, pending = 5, ...);
 # wrow() maps a logical row to the physical sheet row.
-AV_LOGICAL = [8, 10, 12] if RULE == 1 else [7, 9, 11, 13]
+AV_LOGICAL = [8, 10, 12] if RULE == 1 else [7, 9, 11]  # user 10-24: Friday rule also keeps only 3 AV weeks
 
 
 def wrow(k):
@@ -376,9 +376,9 @@ for loc, label in LOCS.items():
             sm.cell(wrow(r), base + 1 + i, "=%s%d-%s%d-%s%d" % (cL, wrow(stock_row), cL, wrow(5), cL, wrow(6)))
         av_prev = r
 
+        # user 10-24: only 2 forward weeks (3 AV balances in total), dropping wk+3
         fwd_ctrl = [("Control!$B5", "Control!$C5", "Control!$A$5"),
-                    ("Control!$B6", "Control!$C6", "Control!$A$6"),
-                    ("Control!$B7", "Control!$C7", "Control!$A$7")]
+                    ("Control!$B6", "Control!$C6", "Control!$A$6")]
         r = 8
         for mon_ref, sat_ref, wk_ref in fwd_ctrl:
             sm.cell(wrow(r), wk_col_idx, "=%s" % wk_ref)
