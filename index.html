@@ -372,6 +372,8 @@
       return 'band-red';
     }
 
+    // user 10-24: show only the colour-group Total rows (plus GTTL); set true to list every build year again
+    const SHOW_YEAR_ROWS = false;
     function fillYBSTable(tbodyId, data){
       const tbody = document.getElementById(tbodyId);
       const z = (v)=> v === 0 ? '' : v;
@@ -389,7 +391,7 @@
         const g = data[y];
         keys.forEach((k,i)=>{ bandSum[i] += g[k]; });
         const cells = keys.map(k => `<td class="num">${z(g[k])}</td>`).join('');
-        rows += `<tr class="${cls}"><td>${y}</td>${cells}</tr>`;
+        if (SHOW_YEAR_ROWS) rows += `<tr class="${cls}"><td>${y}</td>${cells}</tr>`;
       });
       flushBand();
       const totals = keys.map(k => years.reduce((s,y)=>s+data[y][k], 0));
